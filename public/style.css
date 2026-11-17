@@ -157,3 +157,32 @@ table.data tbody tr:hover { background: var(--surface-2); }
 
 table.refs td { white-space: normal; min-width: 160px; }
 table.refs td:first-child { min-width: 240px; }
+
+/* Avertissements et notes de lecture */
+.notice { background: var(--surface-2); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px;
+  padding: 10px 14px; margin: 0 0 16px; font-size: .86rem; color: var(--text); }
+.notice:empty { display: none; }
+.notice.warn { border-left-color: var(--warn); }
+#map-note { margin: 10px 0 0; }
+.report-cta .notice { margin-top: 10px; }
+.kpi.warn .v { color: var(--warn); }
+.kpis.small .kpi .v { font-size: 1.3rem; }
+#t-verif td { white-space: normal; }
+#t-verif td.num, #t-verif td .tag { white-space: nowrap; }
+#t-verif td.motif { min-width: 300px; }
+/* 8 filtres : la barre n'est plus collante pour ne pas masquer le contenu */
+.filters { position: static; }
+.filters select { width: 165px; }
+@media (max-width: 760px) { .filters select { width: 100%; } }
+
+/* Impression de la fiche entreprise */
+@media print {
+  .topbar .btn, .tabs, #filters, .foot, #e-print, .loading { display: none !important; }
+  body { background: #fff; }
+  main { padding: 0; }
+  .card, .kpi { box-shadow: none; break-inside: avoid; }
+  .table-wrap { max-height: none; overflow: visible; }
+  .filters.inline { border: 0; padding: 0; }
+  table.data td, table.data th { white-space: normal; font-size: .75rem; padding: 4px 6px; }
+  .filters.inline select { border: 0; appearance: none; -webkit-appearance: none; font-weight: 600; width: auto; }
+}

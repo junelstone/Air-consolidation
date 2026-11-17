@@ -3,7 +3,7 @@
 // Pour mettre à jour le site : remplacer data/Base_consolidee_qualite_air_DGE_OMS.xlsx
 // en gardant les mêmes onglets et en-têtes de colonnes, puis relancer.
 import ExcelJS from "exceljs";
-import { mkdir, writeFile, copyFile } from "node:fs/promises";
+import { mkdir, writeFile, copyFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -72,6 +72,15 @@ const KEEP = [
   "Unité_source", "Signe", "Valeur_µg_m3", "Valeur_guide_µg_m3", "Période_valeur_guide",
   "Référence", "Ratio_valeur_guide", "Statut_conformité", "Statut_qualité", "Commentaires",
 ];
+// Regroupe les motifs « À vérifier » (texte libre) en quelques catégories pour le tri en atelier.
+function categorieVerif(c) {
+  c = String(c || "");
+  if (/identiques|copie suspecte/i.test(c)) return "Copie suspecte d'une autre fiche";
+  if (/Teneur en métal/i.test(c)) return "Métaux : µg/m³ ou ng/m³ ?";
+  if (/LQ exprimée/i.test(c)) return "Limite de quantification en mg/m³";
+  if (/incohérente/i.test(c)) return "Unité incohérente sur la fiche";
+  return "Valeur improbable (saisie ou unité)";
+}
 const mesures = sheetToObjects(sheet("Base_consolidée")).map((r) => {
   const o = {};
   for (const k of KEEP) {
@@ -81,6 +90,7 @@ const mesures = sheetToObjects(sheet("Base_consolidée")).map((r) => {
     if (k === "Valeur_source" && v !== null) v = String(v);
     o[k] = v;
   }
+  if (o["Statut_qualité"] === "À vérifier") o["Catégorie_vérification"] = categorieVerif(o.Commentaires);
   return o;
 });
 
@@ -117,7 +127,7 @@ for (const m of mesures) {
     stations.set(key, {
       site: m.Site, station: m.Station, entreprise: m.Entreprise, secteur: m.Secteur,
       departement: m["Département"], lat: m.Latitude, lon: m.Longitude,
-      nb: 0, nbValides: 0, depassements: new Set(), ratioMax: 0,
+      matrice: m.Matrice, nb: 0, nbValides: 0, depassements: new Set(), ratioMax: 0,
     });
   }
   const s = stations.get(key);
@@ -132,9 +142,10 @@ const stationsOut = [...stations.values()].map((s) => ({
   ...s, depassements: [...s.depassements].sort(), ratioMax: round(s.ratioMax, 2),
 }));
 
+// Date de la donnée = date d'enregistrement de l'Excel : le JSON ne change pas tant que l'Excel ne change pas.
 const meta = {
   source: path.basename(src),
-  genere_le: new Date().toISOString(),
+  genere_le: (wb.modified instanceof Date ? wb.modified : (await stat(src)).mtime).toISOString(),
   nb_mesures: mesures.length,
   nb_valides: mesures.filter((m) => m["Statut_qualité"] === "Valide").length,
   nb_a_verifier: mesures.filter((m) => m["Statut_qualité"] === "À vérifier").length,
@@ -151,4 +162,29 @@ await mkdir(out, { recursive: true });
 const data = { meta, mesures, fiches, synthesePolluants, valeursGuides, emissions, cheminee, anomalies, stations: stationsOut };
 await writeFile(path.join(out, "donnees.json"), JSON.stringify(data));
 await copyFile(src, path.join(out, "Base_consolidee_qualite_air_DGE_OMS.xlsx"));
-console.log(`OK : ${meta.nb_mesures} mesures, ${meta.nb_stations} stations, ${anomalies.length} anomalies -> public/data/donnees.json`);
+
+// 3. Fichiers cartographiques régénérés à chaque build (toujours alignés sur l'Excel)
+const xml = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const geojson = {
+  type: "FeatureCollection",
+  features: stationsOut.map((s) => ({
+    type: "Feature",
+    geometry: { type: "Point", coordinates: [s.lon, s.lat] },
+    properties: {
+      site: s.site, station: s.station, entreprise: s.entreprise, departement: s.departement, secteur: s.secteur,
+      matrice: s.matrice, nb_mesures: s.nb, nb_valides: s.nbValides,
+      depassements: s.depassements.join(", ") || "aucun", ratio_max: s.ratioMax || null,
+    },
+  })),
+};
+await writeFile(path.join(out, "stations_qualite_air.geojson"), JSON.stringify(geojson, null, 1));
+const kml = [
+  '<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Stations qualité de l’air DGE/OMS</name>',
+  '<Style id="ok"><IconStyle><color>ff7aaf1b</color></IconStyle></Style><Style id="dep"><IconStyle><color>ff4849e3</color></IconStyle></Style>',
+  ...stationsOut.map((s) => `<Placemark><name>${xml(s.site)} – ${xml(s.station)}</name><styleUrl>#${s.depassements.length ? "dep" : "ok"}</styleUrl>` +
+    `<description>${xml(s.entreprise)} | ${xml(s.secteur)} | ${xml(s.departement)} | ${xml(s.matrice)} | ${s.nb} mesures (${s.nbValides} valides) | ` +
+    `Dépassements : ${xml(s.depassements.join(", ") || "aucun")}</description><Point><coordinates>${s.lon},${s.lat},0</coordinates></Point></Placemark>`),
+  "</Document></kml>",
+].join("\n");
+await writeFile(path.join(out, "stations_qualite_air.kml"), kml);
+console.log(`OK : ${meta.nb_mesures} mesures, ${meta.nb_stations} stations, ${anomalies.length} anomalies -> public/data/donnees.json, KML, GeoJSON`);

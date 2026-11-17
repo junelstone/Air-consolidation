@@ -25,7 +25,7 @@
     <button role="tab" data-tab="dashboard" aria-selected="true">Tableau de bord</button>
     <button role="tab" data-tab="carte">Carte des stations</button>
     <button role="tab" data-tab="donnees">Données</button>
-    <button role="tab" data-tab="emissions">Émissions</button>
+    <button role="tab" data-tab="emissions">Entreprises et émissions</button>
     <button role="tab" data-tab="anomalies">Anomalies</button>
     <button role="tab" data-tab="rapport">Rapport et graphiques</button>
     <button role="tab" data-tab="methode">Méthode</button>
@@ -36,10 +36,20 @@
     <label>Secteur<select id="f-secteur"></select></label>
     <label>Département<select id="f-departement"></select></label>
     <label>Site<select id="f-site"></select></label>
+    <label>Type d'air<select id="f-matrice">
+      <option value="ambiant">Air ambiant (extérieur)</option>
+      <option value="interieur">Air intérieur</option>
+      <option value="site">Air de site (dépôts, usine)</option>
+      <option value="toutes">Tous les types d'air</option>
+    </select></label>
+    <label>Année<select id="f-annee"></select></label>
     <label>Qualité<select id="f-qualite">
       <option value="valides">Mesures valides uniquement</option>
-      <option value="horsdoublons">Toutes sauf doublons</option>
-      <option value="toutes">Toutes les mesures</option>
+      <option value="horsdoublons">Valides et à vérifier</option>
+    </select></label>
+    <label>Référence benzène<select id="f-benzene">
+      <option value="oms">OMS 1,7 µg/m³ (an)</option>
+      <option value="ue">UE 5 µg/m³ (an)</option>
     </select></label>
     <button class="btn" id="f-reset" type="button">Réinitialiser</button>
   </section>
@@ -47,11 +57,12 @@
   <main>
     <!-- TABLEAU DE BORD -->
     <section class="panel active" id="tab-dashboard">
+      <div class="notice" id="d-notice"></div>
       <div class="kpis" id="kpis"></div>
       <div class="grid">
         <article class="card wide">
           <header><h2>Taux de dépassement des valeurs guides OMS par polluant</h2>
-          <p class="hint">Part des mesures comparables qui dépassent la valeur guide. Cliquez sur une barre pour filtrer sur ce polluant.</p></header>
+          <p class="hint">Part des mesures comparables qui dépassent la valeur guide (n = nombre de mesures comparées). Barres pâles : moins de 10 mesures, taux peu fiable. Cliquez sur une barre pour filtrer sur ce polluant.</p></header>
           <div class="chart tall"><canvas id="c-depassements"></canvas></div>
         </article>
         <article class="card wide">
@@ -90,7 +101,7 @@
           </div>
         </header>
         <div id="map"></div>
-        <p class="hint" id="map-note"></p>
+        <p class="notice warn" id="map-note"></p>
       </div>
     </section>
 
@@ -117,6 +128,7 @@
         <label>Entreprise<select id="e-entreprise"></select></label>
         <label>Site<select id="e-site"></select></label>
         <label>Polluant émis<select id="e-polluant"></select></label>
+        <button class="btn" id="e-print" type="button">Imprimer la fiche</button>
       </section>
       <div class="kpis" id="e-kpis"></div>
       <div class="grid">
@@ -128,7 +140,7 @@
         </article>
         <article class="card wide">
           <header><h2 id="e-conc-title">Concentrations mesurées autour des installations</h2>
-            <p class="hint">Pour chaque polluant : concentration maximale rapportée à la valeur guide OMS (mesures valides). Au-delà de la ligne « 1 × », la valeur guide est dépassée.</p></header>
+            <p class="hint">Pour chaque polluant : concentration maximale rapportée à la valeur guide OMS (mesures valides, tous types d'air : l'air de site et l'air intérieur sont comparés à titre indicatif). Au-delà de la ligne « 1 × », la valeur guide est dépassée.</p></header>
           <div class="chart tall" id="e-conc-wrap"><canvas id="c-conc"></canvas></div>
           <p class="empty" id="e-conc-empty" hidden></p>
         </article>
@@ -151,8 +163,10 @@
       <div class="card">
         <header class="row"><div><h2>Mesures à vérifier sur le rapport source</h2>
           <p class="hint" id="verif-count"></p></div>
-          <div class="actions"><button class="btn" id="exp-verif" type="button">Exporter la liste (Excel)</button></div>
+          <div class="actions"><select id="v-cat"></select><button class="btn" id="exp-verif" type="button">Exporter pour vérification (Excel)</button></div>
         </header>
+        <div class="kpis small" id="v-kpis"></div>
+        <p class="hint">L'export contient un onglet par catégorie et des colonnes à remplir en atelier : Décision (Confirmée / Corrigée / Rejetée), valeur et unité corrigées, vérifié par, date. Les décisions sont ensuite reportées dans l'Excel de référence.</p>
         <div class="table-wrap"><table class="data" id="t-verif"></table></div>
       </div>
     </section>
@@ -163,9 +177,9 @@
         <div>
           <h2>Rapport de synthèse</h2>
           <p>Plan du rapport technique, premiers constats, limites, recommandations et questions à trancher en atelier, avec les 13 graphiques placés dans les chapitres correspondants.</p>
+          <p class="notice warn">Version figée du 17/11/2026 (tous types d'air, référence benzène OMS). Le rapport et les 13 figures ne sont pas régénérés automatiquement : après une correction des données, seuls le tableau de bord, la carte, les tableaux et les fichiers KML / GeoJSON sont à jour.</p>
         </div>
-        <a class="btn primary" href="rapport/Rapport_synthese_qualite_air_DGE_OMS.pdf" download>Télécharger le PDF</a>
-        <a class="btn" href="rapport/Rapport_synthese_qualite_air_DGE_OMS.pdf" target="_blank" rel="noopener">Ouvrir dans le navigateur</a>
+        <a class="btn" href="rapport/Rapport_synthese_qualite_air_DGE_OMS.pdf" target="_blank" rel="noopener">Ouvrir le PDF dans le navigateur</a>
       </div>
       <div class="gallery" id="gallery"></div>
     </section>
@@ -180,12 +194,14 @@
             <li><b>Valeurs « &lt; LQ »</b> : conservées avec la limite de quantification. Si la LQ est inférieure à la valeur guide, la mesure est conforme ; sinon elle est « non concluante ».</li>
             <li><b>Doublons</b> exclus des statistiques : LGN 2 (= LGN 1), Luyane Mpili (= Luyan Surveillance), Feuil40 (= Saris Raffinerie), Good Luck Mining (= GPL Louvakou, doublon suspect). Les fiches ENI Mboundi J1–J5 sont des jours distincts et sont conservées.</li>
             <li><b>Données à vérifier</b> : valeurs physiquement improbables, unités incohérentes ou copies suspectes. Elles sont conservées mais exclues des comparaisons tant que le rapport source n'a pas été revu.</li>
-            <li><b>Comparaison aux normes</b> : valeur guide de court terme (24 h, 8 h ou hebdomadaire) quand elle existe, sinon valeur annuelle. La plupart des prélèvements durent 1 à 14 jours : la comparaison est indicative.</li>
+            <li><b>Comparaison aux normes</b> : valeur guide de court terme (24 h, 8 h ou hebdomadaire) quand elle existe, sinon valeur annuelle. La plupart des prélèvements durent 1 à 14 jours : la comparaison est indicative, surtout pour le benzène et les métaux (valeur guide annuelle).</li>
+            <li><b>Type d'air</b> : le tableau de bord et la carte affichent par défaut l'air ambiant (extérieur, y compris les fractions PM10 et PM2.5). L'air intérieur et l'air de site se choisissent dans le filtre « Type d'air ». Le rapport PDF compte tous les types d'air.</li>
+            <li><b>Référence benzène</b> : OMS 1,7 µg/m³ par défaut ; le filtre « Référence benzène » recalcule les statuts avec la valeur annuelle de l'UE (5 µg/m³) pour la discussion en atelier.</li>
             <li><b>Air intérieur et air de site</b> (plateformes offshore, dépôts SCLOG, usine Dangote) : comparés aux valeurs guides d'air ambiant à titre indicatif uniquement.</li>
             <li><b>Normes nationales</b> : aucun texte congolais fixant des valeurs limites d'air ambiant n'a été identifié. À confirmer par la DGE.</li>
           </ul>
           <h2>Mise à jour des données</h2>
-          <p>Le site est généré à partir du fichier Excel <code>data/Base_consolidee_qualite_air_DGE_OMS.xlsx</code> du dépôt. Pour corriger des valeurs ou ajouter des mesures, remplacez ce fichier (mêmes onglets et en-têtes) : Netlify reconstruit le site automatiquement.</p>
+          <p>Le site est généré à partir du fichier Excel <code>data/Base_consolidee_qualite_air_DGE_OMS.xlsx</code> du dépôt. Pour corriger des valeurs ou ajouter des mesures, remplacez ce fichier (mêmes onglets et en-têtes) : Netlify reconstruit le site automatiquement, y compris les fichiers KML et GeoJSON. Le rapport PDF et les 13 figures restent ceux du 17/11/2026 tant qu'ils ne sont pas régénérés.</p>
         </article>
         <article class="card wide prose" id="references">
           <h2>Références normatives</h2>
@@ -222,10 +238,6 @@
         <article class="card wide">
           <header><h2>Valeurs de référence utilisées</h2></header>
           <div class="table-wrap"><table class="data" id="t-guides"></table></div>
-        </article>
-        <article class="card wide">
-          <header><h2>Fiches de collecte</h2></header>
-          <div class="table-wrap"><table class="data" id="t-fiches"></table></div>
         </article>
       </div>
     </section>

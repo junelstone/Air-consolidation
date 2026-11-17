@@ -149,3 +149,8 @@ table.data tbody tr:hover { background: var(--surface-2); }
   #map { height: 440px; }
   h1 { font-size: 1.05rem; }
 }
+
+.filters.inline { position: static; margin: 0 0 16px; border: 1px solid var(--border); border-radius: 12px; }
+.filters.inline select { width: 260px; }
+.empty { color: var(--muted); background: var(--surface-2); border-radius: 8px; padding: 14px 16px; margin: 0; }
+@media (max-width: 760px) { .filters.inline select { width: 100%; } }

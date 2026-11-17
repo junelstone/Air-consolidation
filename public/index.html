@@ -113,20 +113,28 @@
 
     <!-- ÉMISSIONS -->
     <section class="panel" id="tab-emissions">
+      <section class="filters inline" aria-label="Choix de l'entreprise">
+        <label>Entreprise<select id="e-entreprise"></select></label>
+        <label>Site<select id="e-site"></select></label>
+        <label>Polluant émis<select id="e-polluant"></select></label>
+      </section>
+      <div class="kpis" id="e-kpis"></div>
       <div class="grid">
         <article class="card wide">
-          <header class="row"><div><h2>Inventaires d'émissions TotalEnergies (t/an)</h2>
-            <p class="hint">Émissions annuelles déclarées : ce ne sont pas des concentrations, elles ne se comparent pas aux valeurs guides OMS.</p></div>
-            <div class="actions"><label>Polluant <select id="e-polluant"></select></label></div>
-          </header>
-          <div class="chart tall"><canvas id="c-emissions"></canvas></div>
+          <header><h2 id="e-title">Émissions déclarées</h2>
+            <p class="hint" id="e-hint"></p></header>
+          <div class="chart tall" id="e-chart-wrap"><canvas id="c-emissions"></canvas></div>
+          <p class="empty" id="e-empty" hidden></p>
         </article>
         <article class="card wide">
-          <header class="row"><div><h2>Rejets à la cheminée – Dangote Cement (mg/Nm³)</h2>
-            <p class="hint">Comparés aux valeurs limites d'émission SFI/IFC pour les cimenteries (2007).</p></div>
-            <div class="actions"><label>Polluant <select id="d-polluant"></select></label></div>
-          </header>
-          <div class="chart"><canvas id="c-cheminee"></canvas></div>
+          <header><h2 id="e-conc-title">Concentrations mesurées autour des installations</h2>
+            <p class="hint">Pour chaque polluant : concentration maximale rapportée à la valeur guide OMS (mesures valides). Au-delà de la ligne « 1 × », la valeur guide est dépassée.</p></header>
+          <div class="chart tall" id="e-conc-wrap"><canvas id="c-conc"></canvas></div>
+          <p class="empty" id="e-conc-empty" hidden></p>
+        </article>
+        <article class="card wide">
+          <header><h2>Sites et fiches de l'entreprise</h2></header>
+          <div class="table-wrap"><table class="data" id="t-entreprise"></table></div>
         </article>
       </div>
     </section>

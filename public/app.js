@@ -101,12 +101,15 @@ function saveHash() {
   p.set("onglet", state.tab);
   for (const k of ["polluant", "secteur", "departement", "site"]) if (state[k] !== ALL) p.set(k, state[k]);
   if (state.qualite !== "valides") p.set("qualite", state.qualite);
+  if (state.tab === "emissions" && emState.entreprise) { p.set("entreprise", emState.entreprise); if (emState.site !== ALL) p.set("site_em", emState.site); }
   history.replaceState(null, "", "#" + p.toString());
 }
 function loadHash() {
   const p = new URLSearchParams(location.hash.slice(1));
   for (const k of ["polluant", "secteur", "departement", "site", "qualite"]) if (p.get(k)) state[k] = p.get(k);
   if (p.get("onglet")) state.tab = p.get("onglet");
+  if (p.get("entreprise")) emState.entreprise = p.get("entreprise");
+  if (p.get("site_em")) emState.site = p.get("site_em");
 }
 
 /* ---------- onglets ---------- */
@@ -485,48 +488,145 @@ async function exportXlsx(rows, name, sheet = "Mesures") {
 }
 const stamp = () => new Date().toISOString().slice(0, 10);
 
-/* ---------- émissions ---------- */
-function renderEmissions() {
-  const em = DATA.emissions.filter((e) => typeof e["Émission_t_an"] === "number");
-  const pols = uniq(em.map((e) => e.Polluant));
-  const sel = $("#e-polluant");
-  if (!sel.options.length) {
-    sel.innerHTML = pols.map((p) => `<option${p === "COV totaux" || p === "COV" ? " selected" : ""}>${esc(p)}</option>`).join("");
-    if (!pols.includes(sel.value)) sel.value = pols[0];
-    sel.onchange = renderEmissions;
-  }
-  const pol = sel.value;
-  const rows = em.filter((e) => e.Polluant === pol);
-  const years = uniq(rows.map((r) => r["Année"])).sort((a, b) => a - b);
-  const sites = uniq(rows.map((r) => r.Site));
-  const pal = ["#0b6e4f", "#c0392b", "#2f6db3", "#c27c0e", "#7b4fa0", "#1f9aa8", "#8a6d3b", "#d35d8f", "#5b6b64", "#3e8e2f"];
-  makeChart("c-emissions", {
-    type: "line",
-    data: { labels: years, datasets: sites.map((s, i) => ({
-      label: s, data: years.map((y) => rows.find((r) => r.Site === s && r["Année"] === y)?.["Émission_t_an"] ?? null),
-      borderColor: pal[i % pal.length], backgroundColor: pal[i % pal.length], tension: 0, spanGaps: true, pointRadius: 3,
-    })) },
-    options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: "t/an" } } },
-      plugins: { tooltip: { callbacks: { label: (c) => `${c.dataset.label} : ${fmt(c.raw)} t` } } } },
-  });
+/* ---------- émissions (par entreprise) ---------- */
+const PAL = ["#0b6e4f", "#c0392b", "#2f6db3", "#c27c0e", "#7b4fa0", "#1f9aa8", "#8a6d3b", "#d35d8f", "#5b6b64", "#3e8e2f"];
+const emState = { entreprise: null, site: ALL, polluant: null };
 
-  const ch = DATA.cheminee;
-  const dsel = $("#d-polluant");
-  if (!dsel.options.length) {
-    dsel.innerHTML = uniq(ch.map((c) => c.Polluant)).map((p) => `<option>${esc(p)}</option>`).join("");
-    dsel.onchange = renderEmissions;
+function companies() {
+  const inv = new Set(DATA.emissions.map((e) => e.Entreprise));
+  const ch = new Set(DATA.cheminee.map((e) => e.Entreprise));
+  const all = uniq([...DATA.mesures.filter((m) => m["Statut_qualité"] !== "Doublon (exclu)").map((m) => m.Entreprise), ...inv, ...ch]);
+  return all.map((e) => ({ name: e, inv: inv.has(e), ch: ch.has(e) }))
+    .sort((x, y) => (Number(y.inv || y.ch) - Number(x.inv || x.ch)) || x.name.localeCompare(y.name, "fr"));
+}
+
+function initEmissions() {
+  const list = companies();
+  const sel = $("#e-entreprise");
+  const withEm = list.filter((c) => c.inv || c.ch), without = list.filter((c) => !c.inv && !c.ch);
+  sel.innerHTML =
+    `<optgroup label="Avec émissions déclarées">${withEm.map((c) => `<option value="${esc(c.name)}">${esc(c.name)} (${c.inv ? "inventaire t/an" : "cheminée mg/Nm³"})</option>`).join("")}</optgroup>` +
+    `<optgroup label="Mesures de concentration uniquement">${without.map((c) => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join("")}</optgroup>`;
+  emState.entreprise = emState.entreprise && list.some((c) => c.name === emState.entreprise) ? emState.entreprise : withEm[0]?.name || list[0].name;
+  sel.value = emState.entreprise;
+  sel.onchange = () => { emState.entreprise = sel.value; emState.site = ALL; emState.polluant = null; renderEmissions(); saveHash(); };
+  $("#e-site").onchange = (e) => { emState.site = e.target.value; renderEmissions(); saveHash(); };
+  $("#e-polluant").onchange = (e) => { emState.polluant = e.target.value; renderEmissions(); };
+}
+
+function renderEmissions() {
+  const ent = emState.entreprise;
+  const inv = DATA.emissions.filter((e) => e.Entreprise === ent && typeof e["Émission_t_an"] === "number");
+  const ch = DATA.cheminee.filter((e) => e.Entreprise === ent);
+  const mes = DATA.mesures.filter((m) => m.Entreprise === ent && m["Statut_qualité"] !== "Doublon (exclu)");
+
+  // sites de l'entreprise (émissions + mesures)
+  const sites = uniq([...inv.map((e) => e.Site), ...ch.map((e) => e.Site), ...mes.map((m) => m.Site)]);
+  if (emState.site !== ALL && !sites.includes(emState.site)) emState.site = ALL;
+  fillSelect($("#e-site"), sites, emState.site, `Tous les sites (${sites.length})`);
+  const bySite = (r) => emState.site === ALL || r.Site === emState.site;
+  const invS = inv.filter(bySite), chS = ch.filter(bySite), mesS = mes.filter(bySite);
+
+  // polluants émis
+  const src = invS.length ? invS : chS;
+  const pols = uniq(src.map((e) => e.Polluant));
+  const psel = $("#e-polluant");
+  psel.disabled = !pols.length;
+  if (!pols.includes(emState.polluant)) emState.polluant = pols.find((p) => /^COV/.test(p)) || pols.find((p) => p === "NOx") || pols[0] || null;
+  psel.innerHTML = pols.length ? pols.map((p) => `<option${p === emState.polluant ? " selected" : ""}>${esc(p)}</option>`).join("") : "<option>—</option>";
+
+  // indicateurs
+  const valid = mesS.filter((m) => m["Statut_qualité"] === "Valide");
+  const comp = valid.filter(isCompared).length, dep = valid.filter((m) => m["Statut_conformité"] === "Dépassement").length;
+  const k = [
+    [sites.length, "site(s)"],
+    [nf.format(mesS.length), "mesures de concentration"],
+    [nf.format(dep), "dépassements de valeur guide", "bad"],
+    [comp ? pf.format(dep / comp) : "–", "taux de dépassement", "bad"],
+    [invS.length ? "Inventaire" : chS.length ? "Cheminée" : "Aucune", "données d'émission"],
+  ];
+  $("#e-kpis").innerHTML = k.map(([v, l, c]) => `<div class="kpi ${c || ""}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+
+  // graphique des émissions
+  const wrap = $("#e-chart-wrap"), empty = $("#e-empty");
+  if (charts["c-emissions"]) { charts["c-emissions"].destroy(); delete charts["c-emissions"]; }
+  if (invS.length) {
+    $("#e-title").textContent = `Émissions annuelles déclarées – ${ent} (t/an)`;
+    $("#e-hint").textContent = "Inventaires d'émissions issus du reporting de l'entreprise : ce ne sont pas des concentrations, elles ne se comparent pas aux valeurs guides OMS.";
+    const rows = invS.filter((e) => e.Polluant === emState.polluant);
+    const years = uniq(rows.map((r) => r["Année"])).sort((a, b) => a - b);
+    const ss = uniq(rows.map((r) => r.Site));
+    wrap.hidden = false; empty.hidden = true;
+    makeChart("c-emissions", {
+      type: "line",
+      data: { labels: years, datasets: ss.map((s, i) => ({
+        label: s, data: years.map((y) => rows.find((r) => r.Site === s && r["Année"] === y)?.["Émission_t_an"] ?? null),
+        borderColor: PAL[i % PAL.length], backgroundColor: PAL[i % PAL.length], tension: 0, spanGaps: true, pointRadius: 3,
+      })) },
+      options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: `${emState.polluant} (t/an)` } } },
+        plugins: { tooltip: { callbacks: { label: (c) => `${c.dataset.label} : ${fmt(c.raw)} t` } } } },
+    });
+  } else if (chS.length) {
+    $("#e-title").textContent = `Rejets à la cheminée – ${ent} (mg/Nm³)`;
+    $("#e-hint").textContent = "Concentrations à l'émission comparées aux valeurs limites d'émission SFI/IFC (directives EHS cimenterie, 2007).";
+    const dr = chS.filter((c) => c.Polluant === emState.polluant).sort((a, b) => a["Année"] - b["Année"]);
+    const vle = dr.find((r) => r.VLE_IFC_mg_Nm3 != null)?.VLE_IFC_mg_Nm3;
+    wrap.hidden = false; empty.hidden = true;
+    makeChart("c-emissions", {
+      type: "bar",
+      data: { labels: dr.map((r) => r["Année"]), datasets: [{ label: emState.polluant + " (mg/Nm³)", data: dr.map((r) => r.Valeur_mg_Nm3),
+        backgroundColor: dr.map((r) => (vle != null && r.Valeur_mg_Nm3 > vle ? css("--bad") : css("--ok"))), borderRadius: 4 }] },
+      options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, suggestedMax: vle ? vle * 1.2 : undefined, title: { display: true, text: "mg/Nm³" } } },
+        plugins: { legend: { display: false }, guideLine: vle != null ? { value: vle, color: css("--text"), label: `Limite IFC ${fmt(vle)} mg/Nm³` } : null,
+          tooltip: { callbacks: { afterLabel: (c) => dr[c.dataIndex].Statut || "" } } } },
+      plugins: [guideLinePlugin],
+    });
+  } else {
+    $("#e-title").textContent = `Émissions déclarées – ${ent}`;
+    $("#e-hint").textContent = "";
+    wrap.hidden = true; empty.hidden = false;
+    empty.textContent = "Aucune donnée d'émission (inventaire annuel ou mesure à la cheminée) n'a été transmise pour cette entreprise. Seules des mesures de concentration dans l'air sont disponibles : voir ci-dessous.";
   }
-  const dr = ch.filter((c) => c.Polluant === dsel.value).sort((a, b) => a["Année"] - b["Année"]);
-  const vle = dr.find((r) => r.VLE_IFC_mg_Nm3 != null)?.VLE_IFC_mg_Nm3;
-  makeChart("c-cheminee", {
-    type: "bar",
-    data: { labels: dr.map((r) => r["Année"]), datasets: [{ label: dsel.value + " (mg/Nm³)", data: dr.map((r) => r.Valeur_mg_Nm3),
-      backgroundColor: dr.map((r) => (vle != null && r.Valeur_mg_Nm3 > vle ? css("--bad") : css("--ok"))), borderRadius: 4 }] },
-    options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, suggestedMax: vle ? vle * 1.2 : undefined, title: { display: true, text: "mg/Nm³" } } },
-      plugins: { legend: { display: false }, guideLine: vle != null ? { value: vle, color: css("--text"), label: `Limite IFC ${fmt(vle)} mg/Nm³` } : null,
-        tooltip: { callbacks: { afterLabel: (c) => dr[c.dataIndex].Statut || "" } } } },
-    plugins: [guideLinePlugin],
-  });
+
+  // concentrations mesurées : ratio max à la valeur guide par polluant
+  $("#e-conc-title").textContent = `Concentrations mesurées autour des installations – ${ent}${emState.site !== ALL ? " – " + emState.site : ""}`;
+  const g = new Map();
+  for (const m of valid) {
+    if (!isCompared(m) || typeof m.Ratio_valeur_guide !== "number") continue;
+    const o = g.get(m.Polluant) || { r: 0, n: 0, dep: 0, max: null, guide: m["Valeur_guide_µg_m3"], per: m["Période_valeur_guide"] };
+    o.n++; if (m["Statut_conformité"] === "Dépassement") o.dep++;
+    if (m.Ratio_valeur_guide > o.r) { o.r = m.Ratio_valeur_guide; o.max = m["Valeur_µg_m3"]; }
+    g.set(m.Polluant, o);
+  }
+  const items = [...g.entries()].filter(([, o]) => o.r > 0).sort((a, b) => b[1].r - a[1].r);
+  const cwrap = $("#e-conc-wrap"), cempty = $("#e-conc-empty");
+  if (charts["c-conc"]) { charts["c-conc"].destroy(); delete charts["c-conc"]; }
+  if (!items.length) {
+    cwrap.hidden = true; cempty.hidden = false;
+    cempty.textContent = "Aucune mesure de concentration valide comparable à une valeur guide pour cette sélection.";
+  } else {
+    cwrap.hidden = false; cempty.hidden = true;
+    cwrap.style.height = Math.max(260, items.length * 30 + 90) + "px";
+    makeChart("c-conc", {
+      type: "bar",
+      data: { labels: items.map((i) => i[0]), datasets: [{ label: "Maximum / valeur guide", data: items.map((i) => i[1].r),
+        backgroundColor: items.map((i) => (i[1].r > 1 ? css("--bad") : css("--ok"))), borderRadius: 3 }] },
+      options: { indexAxis: "y", maintainAspectRatio: false,
+        scales: { x: { type: "logarithmic", min: Math.min(0.1, 10 ** Math.floor(Math.log10(Math.min(...items.map((i) => i[1].r))))), max: Math.max(10, 10 ** Math.ceil(Math.log10(Math.max(...items.map((i) => i[1].r))))), ticks: { callback: (v) => (Math.abs(Math.log10(v) % 1) < 1e-9 ? fmt(v) + " ×" : "") },
+          title: { display: true, text: "rapport à la valeur guide (échelle logarithmique)" } } },
+        plugins: { legend: { display: false }, guideLine: { value: 1, color: css("--text"), label: "1 × valeur guide" },
+          tooltip: { callbacks: { label: (c) => { const o = items[c.dataIndex][1]; return `Max ${fmt(o.max)} µg/m³ = ${fmt(o.r)} × la valeur guide (${fmt(o.guide)} µg/m³, ${o.per})`; },
+            afterLabel: (c) => { const o = items[c.dataIndex][1]; return `${o.dep} dépassement(s) sur ${o.n} mesure(s) comparée(s)`; } } } } },
+      plugins: [guideLinePlugin],
+    });
+  }
+
+  // tableau des sites / fiches
+  const fiches = DATA.fiches.filter((f) => f.Entreprise === ent && (emState.site === ALL || f.Site === emState.site));
+  const fk = ["Fiche_source", "Site", "Secteur", "Département", "Type_document", "Années", "Nb_mesures", "Nb_valides", "Statut_fiche"];
+  $("#t-entreprise").innerHTML = `<thead><tr>${fk.map((x) => `<th>${esc(x.replace(/_/g, " "))}</th>`).join("")}</tr></thead><tbody>` +
+    (fiches.length ? fiches.map((f) => `<tr>${fk.map((x) => x === "Statut_fiche" ? `<td><span class="tag ${String(f[x]).startsWith("Retenue") ? "ok" : "warn"}">${esc(f[x])}</span></td>` : `<td class="${typeof f[x] === "number" ? "num" : ""}">${esc(f[x])}</td>`).join("")}</tr>`).join("")
+      : `<tr><td colspan="${fk.length}">Aucune fiche pour cette sélection.</td></tr>`) + "</tbody>";
 }
 
 /* ---------- anomalies ---------- */
@@ -593,6 +693,7 @@ async function start() {
   $("#exp-verif").onclick = () => exportXlsx(verifRows(), `mesures_a_verifier_${stamp()}.xlsx`, "À vérifier");
   renderStatic();
   renderAll();
+  initEmissions();
   renderEmissions();
   showTab(state.tab);
   $("#loading").classList.add("hidden");

@@ -17,6 +17,19 @@ collectées par la Direction Générale de l'Environnement avec l'OMS Congo
 - **Rapport et graphiques** : rapport de synthèse PDF et les 13 figures.
 - **Méthode** : règles de traitement, valeurs de référence, liste des fiches.
 
+## Références normatives
+
+| Référentiel | Organisme, année | Valeurs utilisées | Application |
+|---|---|---|---|
+| Lignes directrices mondiales OMS sur la qualité de l'air | OMS, 2021 | PM2.5 15 µg/m³ (24 h) et 5 (an) ; PM10 45 (24 h) et 15 (an) ; NO2 25 (24 h) et 10 (an) ; SO2 40 (24 h) ; O3 100 (8 h) ; CO 4 000 µg/m³ (24 h) | Air ambiant (référence principale) |
+| Air Quality Guidelines for Europe, 2e éd. | OMS Europe, 2000 | Benzène 1,7 µg/m³ (an, risque 10⁻⁵) ; toluène 260 (1 sem.) ; H2S 150 (24 h) ; Pb 0,5 ; Cd 0,005 ; As 0,0066 ; Ni 0,025 ; Hg 1 ; Mn 0,15 (an) ; V 1 µg/m³ (24 h) | COV, H2S et métaux |
+| Directive 2008/50/CE | UE, 2008 | Benzène 5 µg/m³ (an) | Information seulement |
+| Directive 2004/107/CE | UE, 2004 | As 6, Cd 5, Ni 20 ng/m³ (an) | Information seulement |
+| Directives EHS ciment et chaux, tableau 1 | SFI / IFC, 2007 | NOx 600, SO2 400, poussières 30 mg/Nm³ (gaz sec, 0 °C, 101,3 kPa, 10 % O2) | Cheminée Dangote |
+
+Conversions : mg/m³ × 1 000 ; ppm × M / 24,45 × 1 000 (25 °C, 1 atm) ; % × 10 000 → ppm.
+Aucune norme congolaise n'a été identifiée (à confirmer par la DGE). Détail dans l'onglet « Méthode » du site.
+
 ## Structure
 
 ```

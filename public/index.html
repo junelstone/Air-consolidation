@@ -187,6 +187,38 @@
           <h2>Mise à jour des données</h2>
           <p>Le site est généré à partir du fichier Excel <code>data/Base_consolidee_qualite_air_DGE_OMS.xlsx</code> du dépôt. Pour corriger des valeurs ou ajouter des mesures, remplacez ce fichier (mêmes onglets et en-têtes) : Netlify reconstruit le site automatiquement.</p>
         </article>
+        <article class="card wide prose" id="references">
+          <h2>Références normatives</h2>
+          <p class="hint">Liste complète des textes utilisés pour comparer les mesures. Aucun texte congolais fixant des valeurs limites d'air ambiant ou d'émission n'a été identifié : à confirmer par la DGE.</p>
+          <div class="table-wrap" style="max-height:none"><table class="data refs">
+            <thead><tr><th>Référentiel</th><th>Organisme, année</th><th>Polluants et valeurs utilisés</th><th>Application</th></tr></thead>
+            <tbody>
+              <tr><td><b>Lignes directrices mondiales de l'OMS sur la qualité de l'air</b> (<i>WHO global air quality guidelines: particulate matter (PM2.5 and PM10), ozone, nitrogen dioxide, sulfur dioxide and carbon monoxide</i>)</td><td>Organisation mondiale de la Santé, 2021</td>
+                <td>PM2.5 : 15 µg/m³ (24 h), 5 µg/m³ (annuelle)<br>PM10 : 45 µg/m³ (24 h), 15 µg/m³ (annuelle)<br>NO2 : 25 µg/m³ (24 h), 10 µg/m³ (annuelle)<br>SO2 : 40 µg/m³ (24 h)<br>O3 : 100 µg/m³ (8 h), 60 µg/m³ (saison de pointe, non appliquée)<br>CO : 4 mg/m³ = 4 000 µg/m³ (24 h)</td>
+                <td>Référence principale pour l'air ambiant, l'air de site et l'air intérieur (indicatif). Valeur de court terme retenue en priorité.</td></tr>
+              <tr><td><b>Lignes directrices de l'OMS sur la qualité de l'air pour l'Europe, 2<sup>e</sup> édition</b> (<i>Air Quality Guidelines for Europe</i>, Publications régionales, série européenne n° 91)</td><td>OMS, Bureau régional de l'Europe, 2000</td>
+                <td>Benzène : 1,7 µg/m³ (annuelle ; excès de risque de cancer de 1/100 000, aucun seuil sans effet)<br>Toluène : 260 µg/m³ (1 semaine)<br>H2S : 150 µg/m³ (24 h)<br>Plomb : 0,5 µg/m³ (annuelle)<br>Cadmium : 5 ng/m³ (annuelle)<br>Arsenic : 6,6 ng/m³ (annuelle ; risque 1/100 000)<br>Nickel : 25 ng/m³ (annuelle ; risque 1/100 000)<br>Mercure : 1 µg/m³ (annuelle)<br>Manganèse : 0,15 µg/m³ (annuelle)<br>Vanadium : 1 µg/m³ (24 h)</td>
+                <td>Polluants non couverts par l'OMS 2021 (COV, H2S, métaux).</td></tr>
+              <tr><td><b>Directive 2008/50/CE</b> concernant la qualité de l'air ambiant et un air pur pour l'Europe</td><td>Parlement européen et Conseil de l'UE, 2008</td>
+                <td>Benzène : 5 µg/m³ (annuelle)</td><td>Cité pour information uniquement (choix OMS 1,7 ou UE 5 µg/m³ à trancher en atelier). N'entre pas dans le calcul des dépassements.</td></tr>
+              <tr><td><b>Directive 2004/107/CE</b> concernant l'arsenic, le cadmium, le mercure, le nickel et les HAP dans l'air ambiant</td><td>Parlement européen et Conseil de l'UE, 2004</td>
+                <td>Valeurs cibles annuelles (PM10) : arsenic 6 ng/m³, cadmium 5 ng/m³, nickel 20 ng/m³</td><td>Cité pour information uniquement. N'entre pas dans le calcul des dépassements.</td></tr>
+              <tr><td><b>Directives environnementales, sanitaires et sécuritaires (EHS) pour la fabrication du ciment et de la chaux</b>, tableau 1 « Niveaux d'émissions atmosphériques »</td><td>Société financière internationale (SFI / IFC), Groupe Banque mondiale, 2007</td>
+                <td>Four à ciment : NOx 600 mg/Nm³, SO2 400 mg/Nm³, poussières 30 mg/Nm³ (gaz sec, 0 °C, 101,3 kPa, 10 % O2)</td><td>Rejets à la cheminée de Dangote Cement uniquement (pas l'air ambiant).</td></tr>
+            </tbody>
+          </table></div>
+          <h2>Hypothèses de conversion des unités</h2>
+          <ul>
+            <li><b>mg/m³ → µg/m³</b> : × 1 000 (603 valeurs).</li>
+            <li><b>ppm → µg/m³</b> : ppm × M / 24,45 × 1 000, avec 24,45 L/mol le volume molaire à 25 °C et 1 atm (101,325 kPa). Masses molaires (g/mol) : CO 28,01 ; NO2 46,01 ; SO2 64,07 ; CO2 44,01 ; benzène 78,11 ; toluène 92,14 ; xylènes et éthylbenzène 106,17.</li>
+            <li><b>% volume → ppm</b> : × 10 000, puis conversion ppm → µg/m³ ci-dessus.</li>
+            <li><b>Valeurs « &lt; LQ »</b> : comparées avec la limite de quantification. Conforme si LQ ≤ valeur guide, sinon non concluant.</li>
+            <li><b>Durées</b> : la valeur guide de court terme (24 h, 8 h ou 1 semaine) est appliquée quand elle existe, sinon la valeur annuelle. La plupart des prélèvements durent 1 à 14 jours : la comparaison est indicative.</li>
+            <li><b>Inventaires d'émissions</b> (t/an) : non convertis et non comparés à une norme.</li>
+          </ul>
+          <h2>Polluants sans valeur de référence</h2>
+          <p>Les polluants suivants sont mesurés mais n'ont pas de valeur guide OMS : ils sont classés « Non comparable » (842 mesures). Éthylbenzène, xylènes, PST (particules totales), PM1, PM4, n-hexane, n-heptane, n-pentane, cyclohexane, ETBE, hydrocarbures totaux, COV totaux, CO2, chrome, cuivre, zinc, antimoine, cobalt, thallium, sélénium, étain, baryum, bore, béryllium, fer, aluminium, molybdène.</p>
+        </article>
         <article class="card wide">
           <header><h2>Valeurs de référence utilisées</h2></header>
           <div class="table-wrap"><table class="data" id="t-guides"></table></div>

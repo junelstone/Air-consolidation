@@ -154,3 +154,6 @@ table.data tbody tr:hover { background: var(--surface-2); }
 .filters.inline select { width: 260px; }
 .empty { color: var(--muted); background: var(--surface-2); border-radius: 8px; padding: 14px 16px; margin: 0; }
 @media (max-width: 760px) { .filters.inline select { width: 100%; } }
+
+table.refs td { white-space: normal; min-width: 160px; }
+table.refs td:first-child { min-width: 240px; }

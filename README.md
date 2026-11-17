@@ -6,16 +6,22 @@ collectées par la Direction Générale de l'Environnement avec l'OMS Congo
 
 ## Contenu de l'application
 
-- **Tableau de bord** : filtres par polluant, secteur, département, site et qualité des données ;
+- **Tableau de bord** : filtres par polluant, secteur, département, site, type d'air (air ambiant par défaut,
+  air intérieur, air de site), année, qualité des données et référence benzène (OMS 1,7 ou UE 5 µg/m³) ;
   indicateurs clés ; taux de dépassement des valeurs guides OMS ; concentrations par site
   comparées à la valeur guide ; répartition par statut, département et secteur.
 - **Carte des stations** : stations géoréférencées, en rouge si au moins un dépassement ;
   téléchargement KML (Google Earth) et GeoJSON (QGIS).
 - **Données** : tableau des 2 516 mesures, recherche, tri, export CSV et Excel de la sélection.
-- **Émissions** : inventaires TotalEnergies (t/an) et rejets cheminée Dangote vs limites SFI/IFC.
-- **Anomalies** : journal des corrections et liste des mesures à vérifier (exportable).
-- **Rapport et graphiques** : rapport de synthèse PDF et les 13 figures.
-- **Méthode** : règles de traitement, valeurs de référence, liste des fiches.
+- **Entreprises et émissions** : fiche par entreprise (mesures, dépassements, mesures à vérifier), inventaires
+  TotalEnergies (t/an) et rejets cheminée Dangote vs limites SFI/IFC ; bouton « Imprimer la fiche ».
+- **Anomalies** : journal des corrections et liste des 232 mesures à vérifier, classées en 5 catégories ;
+  export Excel de travail (un onglet par catégorie, colonnes Décision / valeur corrigée / vérifié par à remplir).
+- **Rapport et graphiques** : rapport de synthèse PDF et les 13 figures (version figée du 17/11/2026).
+- **Méthode** : règles de traitement, références normatives, hypothèses de conversion, valeurs de référence.
+
+Le tableau de bord affiche par défaut l'**air ambiant** : 156 dépassements sur 1 035 mesures comparées (15 %).
+Le rapport PDF compte **tous les types d'air** (187 sur 1 174, 16 %) : choisir « Tous les types d'air » pour retrouver ses chiffres.
 
 ## Références normatives
 
@@ -56,7 +62,7 @@ Chaque modification poussée sur la branche `main` redéploie le site automatiqu
 
 1. Remplacer `data/Base_consolidee_qualite_air_DGE_OMS.xlsx` par la nouvelle version
    (mêmes onglets et mêmes en-têtes de colonnes), directement sur GitHub (**Add file → Upload files**) ou en local.
-2. Netlify reconstruit le site : le tableau de bord, la carte et le tableau sont à jour.
+2. Netlify reconstruit le site : le tableau de bord, la carte, le tableau et les fichiers KML / GeoJSON sont à jour.
 
 Le rapport PDF, lui, n'est pas régénéré par Netlify. Pour le refaire après une mise à jour :
 
@@ -67,6 +73,22 @@ python3 scripts/build_report.py
 
 puis pousser le nouveau fichier `public/rapport/Rapport_synthese_qualite_air_DGE_OMS.pdf`.
 Les tableaux du rapport sont relus dans l'Excel ; les textes des constats sont dans le script.
+Les 13 figures de `public/graphiques/` ne sont pas régénérées par ce script.
+
+## Pendant l'atelier : traiter les mesures à vérifier
+
+1. Onglet **Anomalies → Exporter pour vérification (Excel)** : un onglet par catégorie
+   (copie suspecte, métaux µg ou ng, LQ en mg/m³, unité incohérente, valeur improbable).
+2. Chaque groupe remplit, ligne par ligne, *Décision* (Confirmée / Corrigée / Rejetée), *Valeur_corrigée*,
+   *Unité_corrigée*, *Vérifié_par*, *Date_vérification*, à partir du rapport source. Pas de rapport source = Rejetée.
+3. Une seule personne reporte les décisions dans `data/Base_consolidee_qualite_air_DGE_OMS.xlsx`
+   (colonne *Statut_qualité* : « Valide » si confirmée ou corrigée, avec la valeur corrigée et le statut de conformité recalculé ;
+   « Rejetée » si rejetée, avec *Statut_conformité* « Non évalué (donnée rejetée) » ; la décision est notée dans *Commentaires*), sans changer les onglets ni les en-têtes.
+4. Pousser l'Excel sur `main` : le site est à jour en une à deux minutes (vérifier la date en pied de page).
+5. Régénérer le rapport PDF une seule fois, à la fin de l'atelier.
+
+Hors connexion : `npm install && npm run build && npm start` sur l'ordinateur de présentation ;
+tout fonctionne sauf le fond de carte OpenStreetMap.
 
 ## Travailler en local
 

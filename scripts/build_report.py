@@ -293,6 +293,16 @@ def build():
            table([["Polluant", "Valeur", "Période", "Référence"]] +
                  [[g[0], (fr(g[1]) + " µg/m³") if isinstance(g[1], (int, float)) else (g[4] or "–"), g[2], g[3]] for g in D["guides"]],
                  [4.2 * cm, 2.6 * cm, 2.6 * cm, 7.6 * cm]),
+           Spacer(1, 6),
+           P("Références normatives", "h2"),
+           table([["Référentiel", "Organisme, année", "Application"],
+                  ["Lignes directrices mondiales sur la qualité de l'air (PM2.5, PM10, O3, NO2, SO2, CO)", "OMS, 2021", "Référence principale, air ambiant"],
+                  ["Air Quality Guidelines for Europe, 2e éd. (benzène, toluène, H2S, métaux)", "OMS Europe, 2000", "Polluants non couverts par l'OMS 2021"],
+                  ["Directive 2008/50/CE : benzène 5 µg/m³ (an)", "UE, 2008", "Information ; choix OMS 1,7 ou UE 5 à trancher en atelier"],
+                  ["Directive 2004/107/CE : As 6, Cd 5, Ni 20 ng/m³ (an)", "UE, 2004", "Information uniquement"],
+                  ["Directives EHS ciment et chaux, tableau 1 : NOx 600, SO2 400, poussières 30 mg/Nm³", "SFI / IFC, 2007", "Cheminée Dangote uniquement"]],
+                 [8.6 * cm, 3 * cm, 5.4 * cm]),
+           P("Aucune norme congolaise de qualité de l'air ambiant n'a été identifiée : à confirmer par la DGE.", "note"),
            PageBreak()]
 
     # ---- 4. Description des données ----

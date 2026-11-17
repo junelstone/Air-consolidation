@@ -26,8 +26,17 @@ const FIGURES = [
 ];
 
 let DATA = null;
-const state = { polluant: ALL, secteur: ALL, departement: ALL, site: ALL, qualite: "valides",
-  q: "", sortKey: "ID", sortDir: 1, page: 0, tab: "dashboard" };
+const DEFAULTS = { polluant: ALL, secteur: ALL, departement: ALL, site: ALL, matrice: "ambiant", annee: ALL,
+  qualite: "valides", benzene: "oms" };
+const state = { ...DEFAULTS, q: "", sortKey: "ID", sortDir: 1, page: 0, tab: "dashboard" };
+const MATRICES = {
+  ambiant: (m) => /^Air ambiant/.test(m.Matrice || ""),
+  interieur: (m) => m.Matrice === "Air intérieur",
+  site: (m) => /^Air de site/.test(m.Matrice || ""),
+  toutes: () => true,
+};
+const NO_YEAR = "nd";
+const BENZENE_UE = 5;
 const charts = {};
 let map = null, mapLayer = null;
 
@@ -46,6 +55,21 @@ const median = (xs) => {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 };
 const isCompared = (m) => COMPARED.includes(m["Statut_conformité"]);
+const pl = (n, one, many) => `${nf.format(n)} ${n > 1 ? many : one}`;
+const alpha = (hex, a) => (/^#[0-9a-f]{6}$/i.test(hex) ? hex + Math.round(a * 255).toString(16).padStart(2, "0") : hex);
+// Mesures avec la référence benzène choisie (OMS 1,7 par défaut, UE 5 en option)
+const rowsAll = () => (state.benzene === "ue" ? DATA.mesuresUE : DATA.mesures);
+function buildBenzeneUE() {
+  DATA.mesuresUE = DATA.mesures.map((m) => {
+    if (m.Polluant !== "Benzène" || !isCompared(m) || typeof m["Valeur_µg_m3"] !== "number") return m;
+    const v = m["Valeur_µg_m3"], lq = m.Signe === "<";
+    const statut = lq ? (v <= BENZENE_UE ? "Conforme (< LQ ≤ valeur guide)" : "Non concluant (LQ > valeur guide)")
+      : v > BENZENE_UE ? "Dépassement" : "Conforme";
+    return { ...m, "Valeur_guide_µg_m3": BENZENE_UE, "Période_valeur_guide": "annuelle",
+      "Référence": "Directive 2008/50/CE (UE), valeur limite annuelle", Ratio_valeur_guide: Math.round((v / BENZENE_UE) * 1e4) / 1e4,
+      "Statut_conformité": statut };
+  });
+}
 const tagClass = (statut) => {
   if (!statut) return "neutral";
   if (statut.startsWith("Dépassement")) return "bad";
@@ -58,15 +82,18 @@ const tagClass = (statut) => {
 function qualityOk(m) {
   const q = m["Statut_qualité"];
   if (state.qualite === "valides") return q === "Valide";
-  if (state.qualite === "horsdoublons") return q !== "Doublon (exclu)";
+  if (state.qualite === "horsdoublons") return q !== "Doublon (exclu)" && !/^Rejet/.test(q || "");
   return true;
 }
-function filtered({ ignorePolluant = false, ignoreQualite = false } = {}) {
-  return DATA.mesures.filter((m) =>
+const anneeOk = (m) => state.annee === ALL || (state.annee === NO_YEAR ? m["Année"] == null : String(m["Année"]) === state.annee);
+function filtered({ ignorePolluant = false, ignoreQualite = false, ignoreMatrice = false } = {}) {
+  const matOk = MATRICES[state.matrice] || MATRICES.toutes;
+  return rowsAll().filter((m) =>
     (ignorePolluant || state.polluant === ALL || m.Polluant === state.polluant) &&
     (state.secteur === ALL || m.Secteur === state.secteur) &&
     (state.departement === ALL || m["Département"] === state.departement) &&
     (state.site === ALL || m.Site === state.site) &&
+    (ignoreMatrice || (matOk(m) && anneeOk(m))) &&
     (ignoreQualite || qualityOk(m)));
 }
 
@@ -84,32 +111,52 @@ function refreshFilterOptions() {
     (state.departement === ALL || m["Département"] === state.departement)).map((m) => m.Site));
   if (state.site !== ALL && !sites.includes(state.site)) state.site = ALL;
   fillSelect($("#f-site"), sites, state.site, "Tous les sites");
+  const years = uniq(ms.map((m) => m["Année"])).sort((a, b) => b - a).map(String);
+  $("#f-annee").innerHTML = `<option value="${ALL}">Toutes les années</option>` +
+    years.map((y) => `<option value="${y}">${y}</option>`).join("") + `<option value="${NO_YEAR}">Année non renseignée</option>`;
+  if (state.annee !== ALL && state.annee !== NO_YEAR && !years.includes(state.annee)) state.annee = ALL;
+  $("#f-annee").value = state.annee;
+  if (!MATRICES[state.matrice]) state.matrice = DEFAULTS.matrice;
+  if (!["valides", "horsdoublons"].includes(state.qualite)) state.qualite = "horsdoublons";
+  if (!["oms", "ue"].includes(state.benzene)) state.benzene = "oms";
+  $("#f-matrice").value = state.matrice;
   $("#f-qualite").value = state.qualite;
+  $("#f-benzene").value = state.benzene;
 }
 function bindFilters() {
-  const map = { "#f-polluant": "polluant", "#f-secteur": "secteur", "#f-departement": "departement", "#f-site": "site", "#f-qualite": "qualite" };
+  const map = { "#f-polluant": "polluant", "#f-secteur": "secteur", "#f-departement": "departement", "#f-site": "site",
+    "#f-matrice": "matrice", "#f-annee": "annee", "#f-qualite": "qualite", "#f-benzene": "benzene" };
   for (const [sel, key] of Object.entries(map)) {
-    $(sel).addEventListener("change", (e) => { state[key] = e.target.value; state.page = 0; refreshFilterOptions(); renderAll(); saveHash(); });
+    $(sel).addEventListener("change", (e) => {
+      state[key] = e.target.value; state.page = 0; refreshFilterOptions(); renderAll();
+      if (key === "benzene") renderEmissions();
+      saveHash();
+    });
   }
   $("#f-reset").addEventListener("click", () => {
-    Object.assign(state, { polluant: ALL, secteur: ALL, departement: ALL, site: ALL, qualite: "valides", q: "", page: 0 });
-    $("#q").value = ""; refreshFilterOptions(); renderAll(); saveHash();
+    const benz = state.benzene !== DEFAULTS.benzene;
+    Object.assign(state, DEFAULTS, { q: "", page: 0 });
+    $("#q").value = ""; refreshFilterOptions(); renderAll(); if (benz) renderEmissions(); saveHash();
   });
 }
 function saveHash() {
   const p = new URLSearchParams();
   p.set("onglet", state.tab);
-  for (const k of ["polluant", "secteur", "departement", "site"]) if (state[k] !== ALL) p.set(k, state[k]);
-  if (state.qualite !== "valides") p.set("qualite", state.qualite);
-  if (state.tab === "emissions" && emState.entreprise) { p.set("entreprise", emState.entreprise); if (emState.site !== ALL) p.set("site_em", emState.site); }
+  for (const k of Object.keys(DEFAULTS)) if (state[k] !== DEFAULTS[k]) p.set(k, state[k]);
+  if (state.tab === "emissions" && emState.entreprise) {
+    p.set("entreprise", emState.entreprise);
+    if (emState.site !== ALL) p.set("site_em", emState.site);
+    if (emState.polluant) p.set("polluant_em", emState.polluant);
+  }
   history.replaceState(null, "", "#" + p.toString());
 }
 function loadHash() {
   const p = new URLSearchParams(location.hash.slice(1));
-  for (const k of ["polluant", "secteur", "departement", "site", "qualite"]) if (p.get(k)) state[k] = p.get(k);
+  for (const k of Object.keys(DEFAULTS)) if (p.get(k)) state[k] = p.get(k);
   if (p.get("onglet")) state.tab = p.get("onglet");
   if (p.get("entreprise")) emState.entreprise = p.get("entreprise");
   if (p.get("site_em")) emState.site = p.get("site_em");
+  if (p.get("polluant_em")) emState.polluant = p.get("polluant_em");
 }
 
 /* ---------- onglets ---------- */
@@ -163,7 +210,7 @@ const guideLinePlugin = {
 
 function guideFor(polluant) {
   const counts = new Map();
-  for (const m of DATA.mesures) {
+  for (const m of rowsAll()) {
     if (m.Polluant !== polluant || m["Valeur_guide_µg_m3"] == null) continue;
     const k = m["Valeur_guide_µg_m3"] + "|" + (m["Période_valeur_guide"] || "");
     counts.set(k, (counts.get(k) || 0) + 1);
@@ -198,14 +245,23 @@ function statsByPolluant(rows) {
 function renderKpis(rows) {
   const comp = rows.filter(isCompared).length;
   const dep = rows.filter((m) => m["Statut_conformité"] === "Dépassement").length;
+  const nSites = new Set(rows.map((m) => m.Site)).size, nEnt = new Set(rows.map((m) => m.Entreprise)).size;
+  const split = (txt) => { const i = txt.indexOf(" "); return [txt.slice(0, i), txt.slice(i + 1)]; };
   const k = [
-    [nf.format(rows.length), "mesures sélectionnées"],
-    [nf.format(new Set(rows.map((m) => m.Site)).size), "sites"],
-    [nf.format(new Set(rows.map((m) => m.Entreprise)).size), "entreprises"],
-    [nf.format(comp), "mesures comparables à une valeur guide"],
-    [nf.format(dep), "dépassements", "bad"],
-    [comp ? pf.format(dep / comp) : "–", "taux de dépassement", "bad"],
+    [nf.format(rows.length), rows.length > 1 ? "mesures sélectionnées" : "mesure sélectionnée"],
+    split(pl(nSites, "site", "sites")),
+    split(pl(nEnt, "entreprise", "entreprises")),
+    [nf.format(comp), comp > 1 ? "mesures comparables à une valeur guide" : "mesure comparable à une valeur guide"],
+    [nf.format(dep), dep > 1 ? "dépassements" : "dépassement", "bad"],
+    [comp ? pf.format(dep / comp) : "–", "taux de dépassement (indicatif)", "bad"],
   ];
+  const labels = { ambiant: "l'air ambiant (extérieur)", interieur: "l'air intérieur", site: "l'air de site (dépôts, usine)", toutes: "tous les types d'air" };
+  const annual = statsByPolluant(rows).filter((s) => s.dep > 0 && s.guide && /annuel/i.test(s.guide.periode)).map((s) => s.polluant);
+  $("#d-notice").innerHTML = `<b>Lecture des résultats :</b> affichage de ${labels[state.matrice]}` +
+    (state.benzene === "ue" ? ", benzène comparé à la valeur UE de 5 µg/m³" : "") +
+    `. Les prélèvements durent 1 à 14 jours : la comparaison aux valeurs guides est indicative` +
+    (annual.length ? `, en particulier pour ${annual.map(esc).join(", ")} (valeur guide annuelle)` : "") + ". " +
+    (state.matrice !== "toutes" || state.benzene !== "oms" ? "Le rapport PDF compte tous les types d'air avec la référence OMS." : "");
   $("#kpis").innerHTML = k.map(([v, l, c]) => `<div class="kpi ${c || ""}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
 }
 
@@ -216,10 +272,10 @@ function renderDepassementsChart(rows) {
   makeChart("c-depassements", {
     type: "bar",
     data: {
-      labels: stats.map((s) => s.polluant),
+      labels: stats.map((s) => [s.polluant, `n = ${s.comp}`]),
       datasets: [{
         label: "Taux de dépassement", data: stats.map((s) => Math.round(s.taux * 1000) / 10),
-        backgroundColor: stats.map((s) => (s.polluant === state.polluant ? acc : s.taux >= 0.25 ? bad : s.taux > 0 ? css("--warn") : ok)),
+        backgroundColor: stats.map((s) => alpha(s.polluant === state.polluant ? acc : s.taux >= 0.25 ? bad : s.taux > 0 ? css("--warn") : ok, s.comp < 10 ? 0.35 : 1)),
         borderRadius: 4,
       }],
     },
@@ -229,7 +285,11 @@ function renderDepassementsChart(rows) {
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: { label: (c) => { const s = stats[c.dataIndex]; return `${s.dep} dépassements sur ${s.comp} mesures comparées (${c.formattedValue} %)`; },
-          afterLabel: (c) => { const g = stats[c.dataIndex].guide; return g ? `Valeur guide : ${fmt(g.value)} µg/m³ (${g.periode})` : ""; } } },
+          afterLabel: (c) => { const s = stats[c.dataIndex], g = s.guide;
+            const out = [];
+            if (g) out.push(`Valeur guide : ${fmt(g.value)} µg/m³ (${g.periode})` + (/annuel/i.test(g.periode) ? " – comparaison indicative" : ""));
+            if (s.comp < 10) out.push("Moins de 10 mesures : taux peu fiable");
+            return out; } } },
       },
       onClick: (_e, els) => {
         if (!els.length) return;
@@ -337,7 +397,7 @@ function renderSyntheseTable(rows) {
   $("#t-synthese").innerHTML = `<thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>` +
     stats.map((s) => `<tr><td><b>${esc(s.polluant)}</b></td><td>${esc(s.famille)}</td><td class="num">${s.n}</td><td class="num">${s.sites}</td>
       <td class="num">${fmt(s.min)}</td><td class="num">${fmt(s.med)}</td><td class="num">${fmt(s.max)}</td>
-      <td class="num">${s.guide ? fmt(s.guide.value) + " <small>(" + esc(s.guide.periode) + ")</small>" : "–"}</td>
+      <td class="num">${s.guide ? fmt(s.guide.value) + " <small>(" + esc(s.guide.periode) + ")</small>" + (/annuel/i.test(s.guide.periode) && s.comp ? ' <span class="tag neutral" title="Valeur guide annuelle comparée à des prélèvements de 1 à 14 jours">indicatif</span>' : "") : "–"}</td>
       <td class="num">${s.comp}</td><td class="num">${s.dep}</td><td class="num">${s.nc}</td>
       <td class="num">${s.taux == null ? "–" : `<span class="tag ${s.taux >= 0.25 ? "bad" : s.taux > 0 ? "warn" : "ok"}">${pf.format(s.taux)}</span>`}</td></tr>`).join("") +
     "</tbody>";
@@ -398,7 +458,8 @@ function renderMap() {
     bounds.push([s.lat, s.lon]);
   }
   if (bounds.length) map.fitBounds(bounds, { padding: [30, 30], maxZoom: 11 });
-  $("#map-note").textContent = `${g.size} station(s) affichée(s) pour la sélection. ${sansCoord ? nf.format(sansCoord) + " mesure(s) sans coordonnées GPS ne sont pas cartographiées." : ""}`;
+  $("#map-note").innerHTML = `${pl(g.size, "station affichée", "stations affichées")} pour la sélection. ` +
+    (sansCoord ? `<b>${nf.format(sansCoord)} mesure${sansCoord > 1 ? "s" : ""} sur ${nf.format(rows.length)} (${pf.format(sansCoord / rows.length)}) sans coordonnées GPS ne ${sansCoord > 1 ? "sont" : "est"} pas sur la carte</b> : la carte ne montre qu'une partie des données. Coordonnées à demander aux entreprises.` : "Toutes les mesures sélectionnées sont géoréférencées.");
 }
 
 /* ---------- tableau des mesures ---------- */
@@ -426,7 +487,7 @@ function renderTable() {
   const pages = Math.max(1, Math.ceil(rows.length / PAGE));
   state.page = Math.min(state.page, pages - 1);
   const slice = rows.slice(state.page * PAGE, (state.page + 1) * PAGE);
-  $("#table-count").textContent = `${nf.format(rows.length)} mesure(s) correspondant aux filtres. Cliquez sur un en-tête pour trier.`;
+  $("#table-count").textContent = `${pl(rows.length, "mesure correspond", "mesures correspondent")} aux filtres. Cliquez sur un en-tête pour trier.`;
   $("#t-mesures").innerHTML = `<thead><tr>${COLS.map(([k, l]) => `<th data-k="${k}">${l}${state.sortKey === k ? (state.sortDir > 0 ? " ▲" : " ▼") : ""}</th>`).join("")}</tr></thead><tbody>` +
     slice.map((m) => `<tr>${COLS.map(([k, , t]) => {
       let v = m[k];
@@ -474,15 +535,33 @@ function loadExcelJs() {
 }
 async function exportXlsx(rows, name, sheet = "Mesures") {
   if (!rows.length) return;
+  await exportXlsxSheets([{ name: sheet, rows, keys: Object.keys(rows[0]) }], name);
+}
+// Plusieurs onglets ; fillFrom = première colonne à remplir (surlignée), decisionCol = liste déroulante.
+async function exportXlsxSheets(sheets, name, { fillFrom = 0, decisionCol = 0 } = {}) {
   await loadExcelJs();
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet(sheet.slice(0, 31));
-  const keys = Object.keys(rows[0]);
-  ws.columns = keys.map((k) => ({ header: k, key: k, width: Math.min(40, Math.max(10, k.length + 2)) }));
-  ws.addRows(rows);
-  ws.getRow(1).font = { bold: true };
-  ws.views = [{ state: "frozen", ySplit: 1 }];
-  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: keys.length } };
+  for (const sh of sheets) {
+    const ws = wb.addWorksheet(sh.name.slice(0, 31));
+    const keys = sh.keys;
+    ws.columns = keys.map((k) => ({ header: k, key: k, width: k === "Commentaires" ? 60 : Math.min(40, Math.max(10, k.length + 2)) }));
+    ws.addRows(sh.rows);
+    ws.getRow(1).font = { bold: true };
+    ws.views = [{ state: "frozen", ySplit: 1 }];
+    ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: keys.length } };
+    if (fillFrom) {
+      for (let c = fillFrom; c <= keys.length; c++) {
+        ws.getColumn(c).width = 18;
+        ws.getCell(1, c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF2CC" } };
+        for (let r = 2; r <= sh.rows.length + 1; r++) ws.getCell(r, c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFFBEA" } };
+      }
+    }
+    if (decisionCol) {
+      for (let r = 2; r <= sh.rows.length + 1; r++) {
+        ws.getCell(r, decisionCol).dataValidation = { type: "list", allowBlank: true, formulae: ['"Confirmée,Corrigée,Rejetée"'] };
+      }
+    }
+  }
   const buf = await wb.xlsx.writeBuffer();
   download(name, new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
 }
@@ -511,14 +590,15 @@ function initEmissions() {
   sel.value = emState.entreprise;
   sel.onchange = () => { emState.entreprise = sel.value; emState.site = ALL; emState.polluant = null; renderEmissions(); saveHash(); };
   $("#e-site").onchange = (e) => { emState.site = e.target.value; renderEmissions(); saveHash(); };
-  $("#e-polluant").onchange = (e) => { emState.polluant = e.target.value; renderEmissions(); };
+  $("#e-polluant").onchange = (e) => { emState.polluant = e.target.value; renderEmissions(); saveHash(); };
+  $("#e-print").onclick = () => window.print();
 }
 
 function renderEmissions() {
   const ent = emState.entreprise;
   const inv = DATA.emissions.filter((e) => e.Entreprise === ent && typeof e["Émission_t_an"] === "number");
   const ch = DATA.cheminee.filter((e) => e.Entreprise === ent);
-  const mes = DATA.mesures.filter((m) => m.Entreprise === ent && m["Statut_qualité"] !== "Doublon (exclu)");
+  const mes = rowsAll().filter((m) => m.Entreprise === ent && m["Statut_qualité"] !== "Doublon (exclu)");
 
   // sites de l'entreprise (émissions + mesures)
   const sites = uniq([...inv.map((e) => e.Site), ...ch.map((e) => e.Site), ...mes.map((m) => m.Site)]);
@@ -537,13 +617,15 @@ function renderEmissions() {
 
   // indicateurs
   const valid = mesS.filter((m) => m["Statut_qualité"] === "Valide");
+  const nVerif = mesS.filter((m) => m["Statut_qualité"] === "À vérifier").length;
   const comp = valid.filter(isCompared).length, dep = valid.filter((m) => m["Statut_conformité"] === "Dépassement").length;
   const k = [
-    [sites.length, "site(s)"],
-    [nf.format(mesS.length), "mesures de concentration"],
-    [nf.format(dep), "dépassements de valeur guide", "bad"],
-    [comp ? pf.format(dep / comp) : "–", "taux de dépassement", "bad"],
-    [invS.length ? "Inventaire" : chS.length ? "Cheminée" : "Aucune", "données d'émission"],
+    [nf.format(sites.length), sites.length > 1 ? "sites" : "site"],
+    [nf.format(mesS.length), `mesures de concentration, dont ${nf.format(valid.length)} valides`],
+    [nf.format(nVerif), "à vérifier (exclues des calculs)", nVerif ? "warn" : ""],
+    [nf.format(dep), dep > 1 ? "dépassements de valeur guide" : "dépassement de valeur guide", "bad"],
+    [comp ? pf.format(dep / comp) : "–", nVerif ? `taux sur ${comp} mesures valides comparées` : "taux de dépassement", "bad"],
+    [invS.length ? "Inventaire (t/an)" : chS.length ? "Cheminée (mg/Nm³)" : "Aucune", invS.length || chS.length ? "données d'émission" : "donnée d'émission transmise"],
   ];
   $("#e-kpis").innerHTML = k.map(([v, l, c]) => `<div class="kpi ${c || ""}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
 
@@ -642,27 +724,56 @@ function renderAnomalies() {
   $("#t-anomalies").innerHTML = `<thead><tr><th>Fiche source</th><th>Type</th><th>Détail</th></tr></thead><tbody>` +
     list.map((a) => `<tr><td><b>${esc(a.Fiche_source)}</b></td><td><span class="tag ${a.Type === "Note de traitement" ? "neutral" : "warn"}">${esc(a.Type)}</span></td><td>${esc(a["Détail"])}</td></tr>`).join("") + "</tbody>";
 
-  const v = verifRows();
-  $("#verif-count").textContent = `${nf.format(v.length)} mesure(s) marquées « À vérifier » pour la sélection (filtres polluant, secteur, département et site). Elles sont exclues des comparaisons tant que le rapport source n'a pas été revu.`;
-  $("#t-verif").innerHTML = `<thead><tr><th>ID</th><th>Fiche</th><th>Site</th><th>Station</th><th>Année</th><th>Polluant</th><th>Valeur source</th><th>Unité</th><th>µg/m³</th><th>Motif</th></tr></thead><tbody>` +
-    v.map((m) => `<tr><td class="num">${m.ID}</td><td>${esc(m.Fiche_source)}</td><td>${esc(m.Site)}</td><td>${esc(m.Station)}</td><td class="num">${esc(m["Année"])}</td>
-      <td>${esc(m.Polluant)}</td><td class="num">${esc(m.Valeur_source)}</td><td>${esc(m["Unité_source"])}</td><td class="num">${fmt(m["Valeur_µg_m3"])}</td><td>${esc(m.Commentaires)}</td></tr>`).join("") + "</tbody>";
+  const all = verifRows();
+  const cats = uniq(all.map((m) => m["Catégorie_vérification"]));
+  const csel = $("#v-cat"), cur = csel.value || ALL;
+  csel.innerHTML = `<option value="${ALL}">Toutes les catégories (${all.length})</option>` +
+    cats.map((c) => `<option value="${esc(c)}">${esc(c)} (${all.filter((m) => m["Catégorie_vérification"] === c).length})</option>`).join("");
+  csel.value = cats.includes(cur) ? cur : ALL;
+  csel.onchange = renderAnomalies;
+  const v = csel.value === ALL ? all : all.filter((m) => m["Catégorie_vérification"] === csel.value);
+  const lq = all.filter((m) => m.Signe === "<").length;
+  $("#verif-count").textContent = `${pl(all.length, "mesure marquée", "mesures marquées")} « À vérifier » pour la sélection (filtres polluant, secteur, département et site ; tous types d'air et toutes années). Elles sont exclues des comparaisons tant que le rapport source n'a pas été revu.`;
+  $("#v-kpis").innerHTML = [
+    [nf.format(all.length), "à vérifier"],
+    [nf.format(lq), "valeurs « < LQ » : ne peuvent pas devenir des dépassements, vérification rapide"],
+    [nf.format(all.length - lq), "valeurs mesurées à contrôler en priorité", "warn"],
+  ].map(([val, l, c]) => `<div class="kpi ${c || ""}"><div class="v">${val}</div><div class="l">${l}</div></div>`).join("");
+  $("#t-verif").innerHTML = `<thead><tr><th>ID</th><th>Catégorie</th><th>Fiche</th><th>Site</th><th>Station</th><th>Année</th><th>Polluant</th><th>Valeur source</th><th>Unité</th><th>µg/m³</th><th>Motif détaillé</th></tr></thead><tbody>` +
+    v.map((m) => `<tr><td class="num">${m.ID}</td><td><span class="tag warn">${esc(m["Catégorie_vérification"])}</span></td><td>${esc(m.Fiche_source)}</td><td>${esc(m.Site)}</td><td>${esc(m.Station)}</td><td class="num">${esc(m["Année"])}</td>
+      <td>${esc(m.Polluant)}</td><td class="num">${m.Signe === "<" && !String(m.Valeur_source).includes("<") ? "&lt; " : ""}${esc(m.Valeur_source)}</td><td>${esc(m["Unité_source"])}</td><td class="num">${fmt(m["Valeur_µg_m3"])}</td><td class="motif">${esc(m.Commentaires)}</td></tr>`).join("") + "</tbody>";
 }
-const verifRows = () => filtered({ ignoreQualite: true }).filter((m) => m["Statut_qualité"] === "À vérifier");
+// La liste à vérifier ignore les filtres « type d'air » et « année » : c'est une liste de travail sur les données.
+const verifRows = () => filtered({ ignoreQualite: true, ignoreMatrice: true }).filter((m) => m["Statut_qualité"] === "À vérifier");
+const VERIF_KEYS = ["ID", "Catégorie_vérification", "Fiche_source", "Entreprise", "Site", "Station", "Matrice", "Année", "Polluant",
+  "Signe", "Valeur_source", "Unité_source", "Valeur_µg_m3", "Commentaires"];
+const VERIF_FILL = ["Décision", "Valeur_corrigée", "Unité_corrigée", "Vérifié_par", "Date_vérification", "Remarque"];
+async function exportVerif() {
+  const rows = verifRows();
+  if (!rows.length) return;
+  const keys = [...VERIF_KEYS, ...VERIF_FILL];
+  const pick = (ms) => ms.map((m) => Object.fromEntries(keys.map((k) => [k, m[k] ?? null])));
+  const cats = uniq(rows.map((m) => m["Catégorie_vérification"]));
+  const SHEETS = { "Copie suspecte d'une autre fiche": "Copie suspecte", "Métaux : µg/m³ ou ng/m³ ?": "Métaux µg ou ng",
+    "Limite de quantification en mg/m³": "LQ en mg par m3", "Unité incohérente sur la fiche": "Unité incohérente",
+    "Valeur improbable (saisie ou unité)": "Valeur improbable" };
+  const short = (c) => (SHEETS[c] || c).replace(/[\\/?*[\]:]/g, " ").slice(0, 31);
+  await exportXlsxSheets([
+    { name: "Toutes", rows: pick(rows), keys },
+    ...cats.map((c) => ({ name: short(c), rows: pick(rows.filter((m) => m["Catégorie_vérification"] === c)), keys })),
+  ], `mesures_a_verifier_${stamp()}.xlsx`, { fillFrom: VERIF_KEYS.length + 1, decisionCol: VERIF_KEYS.length + 1 });
+}
 
 /* ---------- rapport, méthode ---------- */
 function renderStatic() {
   $("#gallery").innerHTML = FIGURES.map(([f, cap]) =>
     `<figure><a href="graphiques/${f}" target="_blank" rel="noopener"><img src="graphiques/${f}" alt="${esc(cap)}" loading="lazy"></a>
-     <figcaption>${esc(cap)} · <a href="graphiques/${f}" download>télécharger</a></figcaption></figure>`).join("");
+     <figcaption>${esc(cap)} <small>(version du 17/11/2026)</small> · <a href="graphiques/${f}" download>télécharger</a></figcaption></figure>`).join("");
   $("#t-guides").innerHTML = `<thead><tr><th>Polluant</th><th>Valeur</th><th>Période</th><th>Référence</th></tr></thead><tbody>` +
     DATA.valeursGuides.map((g) => `<tr><td><b>${esc(g.Polluant)}</b></td><td class="num">${esc(typeof g["Valeur_µg_m3"] === "number" ? fmt(g["Valeur_µg_m3"]) + " µg/m³" : g["Valeur_µg_m3"])}</td><td>${esc(g["Période"])}</td><td>${esc(g["Référence"])}</td></tr>`).join("") + "</tbody>";
-  const fk = ["Fiche_source", "Entreprise", "Site", "Secteur", "Département", "Type_document", "Années", "Nb_mesures", "Nb_valides", "Nb_à_vérifier", "Statut_fiche", "Lacunes"];
-  $("#t-fiches").innerHTML = `<thead><tr>${fk.map((k) => `<th>${esc(k.replace(/_/g, " "))}</th>`).join("")}</tr></thead><tbody>` +
-    DATA.fiches.map((f) => `<tr>${fk.map((k) => k === "Statut_fiche" ? `<td><span class="tag ${f[k] === "Retenue" ? "ok" : "warn"}">${esc(f[k])}</span></td>` : `<td class="${typeof f[k] === "number" ? "num" : ""}">${esc(f[k])}</td>`).join("")}</tr>`).join("") + "</tbody>";
   const d = new Date(DATA.meta.genere_le);
   $("#version").textContent = `${nf.format(DATA.meta.nb_mesures)} mesures, ${DATA.meta.nb_fiches} fiches`;
-  $("#gen").textContent = ` Données générées le ${d.toLocaleDateString("fr-FR")} depuis ${DATA.meta.source}.`;
+  $("#gen").textContent = ` Données : ${DATA.meta.source}, enregistré le ${d.toLocaleDateString("fr-FR")}.`;
 }
 
 function renderAll() {
@@ -682,6 +793,7 @@ async function start() {
     $("#loading").textContent = "Impossible de charger les données (" + e.message + ").";
     return;
   }
+  buildBenzeneUE();
   chartDefaults();
   loadHash();
   refreshFilterOptions();
@@ -690,7 +802,7 @@ async function start() {
   $("#q").addEventListener("input", (e) => { state.q = e.target.value; state.page = 0; renderTable(); });
   $("#exp-csv").onclick = () => exportCsv(tableRows(), `mesures_qualite_air_${stamp()}.csv`);
   $("#exp-xlsx").onclick = () => exportXlsx(tableRows(), `mesures_qualite_air_${stamp()}.xlsx`);
-  $("#exp-verif").onclick = () => exportXlsx(verifRows(), `mesures_a_verifier_${stamp()}.xlsx`, "À vérifier");
+  $("#exp-verif").onclick = () => exportVerif();
   renderStatic();
   renderAll();
   initEmissions();

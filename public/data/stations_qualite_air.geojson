@@ -1,0 +1,905 @@
+{
+ "type": "FeatureCollection",
+ "features": [
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.856639,
+     -4.772861
+    ]
+   },
+   "properties": {
+    "site": "Base industrielle ENI (port)",
+    "station": "G1",
+    "departement": "Pointe-Noire",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 28,
+    "depassements": "Cadmium (Cd)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.129611,
+     -4.368167
+    ]
+   },
+   "properties": {
+    "site": "Carrière de Louvoulou",
+    "station": "P1",
+    "departement": "Kouilou",
+    "secteur": "Mines et carrières",
+    "nb_mesures": 14,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.619194,
+     -4.166417
+    ]
+   },
+   "properties": {
+    "site": "Centre emplisseur de Louvakou",
+    "station": "A",
+    "departement": "Niari",
+    "secteur": "Gaz (GPL, GNL)",
+    "nb_mesures": 21,
+    "depassements": "Arsenic (As), Benzène, Cadmium (Cd), Manganèse (Mn), PM10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.624639,
+     -4.174917
+    ]
+   },
+   "properties": {
+    "site": "Centre emplisseur de Louvakou",
+    "station": "B",
+    "departement": "Niari",
+    "secteur": "Gaz (GPL, GNL)",
+    "nb_mesures": 21,
+    "depassements": "Arsenic (As), Benzène, Cadmium (Cd), Manganèse (Mn), PM10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.619194,
+     -4.166417
+    ]
+   },
+   "properties": {
+    "site": "Centre emplisseur de Louvakou",
+    "station": "G1",
+    "departement": "Niari",
+    "secteur": "Gaz (GPL, GNL)",
+    "nb_mesures": 7,
+    "depassements": "Arsenic (As), Benzène, Cadmium (Cd), Manganèse (Mn), PM10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.624639,
+     -4.174917
+    ]
+   },
+   "properties": {
+    "site": "Centre emplisseur de Louvakou",
+    "station": "G2",
+    "departement": "Niari",
+    "secteur": "Gaz (GPL, GNL)",
+    "nb_mesures": 7,
+    "depassements": "Arsenic (As), Benzène, Cadmium (Cd), Manganèse (Mn), PM10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.126678,
+     -4.564806
+    ]
+   },
+   "properties": {
+    "site": "Champ Zingali",
+    "station": "G1",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 8,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.126678,
+     -4.564806
+    ]
+   },
+   "properties": {
+    "site": "Champ Zingali",
+    "station": "Poste A",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 15,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     15.950917,
+     -1.108139
+    ]
+   },
+   "properties": {
+    "site": "Dépôt d’Edou",
+    "station": "G1",
+    "departement": "Cuvette",
+    "secteur": "Agroalimentaire",
+    "nb_mesures": 6,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     15.950472,
+     -1.108278
+    ]
+   },
+   "properties": {
+    "site": "Dépôt d’Edou",
+    "station": "G2",
+    "departement": "Cuvette",
+    "secteur": "Agroalimentaire",
+    "nb_mesures": 6,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.9395,
+     -4.706417
+    ]
+   },
+   "properties": {
+    "site": "Fonderie de Vindoulou",
+    "station": "PA",
+    "departement": "Kouilou",
+    "secteur": "Fonderie / métallurgie",
+    "nb_mesures": 11,
+    "depassements": "PM10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.922778,
+     -4.709472
+    ]
+   },
+   "properties": {
+    "site": "Fonderie de Vindoulou",
+    "station": "PB",
+    "departement": "Kouilou",
+    "secteur": "Fonderie / métallurgie",
+    "nb_mesures": 11,
+    "depassements": "PM10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.18225,
+     -4.662028
+    ]
+   },
+   "properties": {
+    "site": "Kouakouala",
+    "station": "G1",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 14,
+    "depassements": "Nickel (Ni)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.175194,
+     -4.655611
+    ]
+   },
+   "properties": {
+    "site": "Kouakouala",
+    "station": "G2",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 14,
+    "depassements": "Nickel (Ni)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.183306,
+     -4.663972
+    ]
+   },
+   "properties": {
+    "site": "Kouakouala",
+    "station": "G3",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 14,
+    "depassements": "Nickel (Ni)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.184611,
+     -4.662833
+    ]
+   },
+   "properties": {
+    "site": "Kouakouala",
+    "station": "G4",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 14,
+    "depassements": "Nickel (Ni)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.126678,
+     -4.564806
+    ]
+   },
+   "properties": {
+    "site": "Loufika",
+    "station": "G1",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 8,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.126678,
+     -4.564806
+    ]
+   },
+   "properties": {
+    "site": "Loufika",
+    "station": "PA",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 15,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.902075,
+     -4.670441
+    ]
+   },
+   "properties": {
+    "site": "Permis Kindji",
+    "station": "G1",
+    "departement": "Pointe-Noire",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 2,
+    "depassements": "Cadmium (Cd), Nickel (Ni)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.162284,
+     -4.669315
+    ]
+   },
+   "properties": {
+    "site": "Permis Kindji",
+    "station": "G2",
+    "departement": "Pointe-Noire",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 2,
+    "depassements": "Cadmium (Cd), Nickel (Ni)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.075167,
+     -4.393
+    ]
+   },
+   "properties": {
+    "site": "Permis Mayombe",
+    "station": "G1",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 42,
+    "depassements": "Cadmium (Cd), Nickel (Ni)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.076778,
+     -4.391417
+    ]
+   },
+   "properties": {
+    "site": "Permis Mayombe",
+    "station": "G2",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 43,
+    "depassements": "Cadmium (Cd), Nickel (Ni)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.075944,
+     -4.395889
+    ]
+   },
+   "properties": {
+    "site": "Permis Mayombe",
+    "station": "G3",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 41,
+    "depassements": "Cadmium (Cd), Nickel (Ni)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.160806,
+     -4.448139
+    ]
+   },
+   "properties": {
+    "site": "Permis Mayombe",
+    "station": "G4",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 43,
+    "depassements": "Cadmium (Cd), Nickel (Ni)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.075944,
+     -4.395889
+    ]
+   },
+   "properties": {
+    "site": "Permis Mayombe",
+    "station": "G5",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 43,
+    "depassements": "Cadmium (Cd), Nickel (Ni)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.162417,
+     -4.447528
+    ]
+   },
+   "properties": {
+    "site": "Permis Mayombe",
+    "station": "G6",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 41,
+    "depassements": "Cadmium (Cd), Nickel (Ni)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.814222,
+     -4.672556
+    ]
+   },
+   "properties": {
+    "site": "Pointe-Indienne",
+    "station": "G1",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 12,
+    "depassements": "PM10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.818139,
+     -4.656083
+    ]
+   },
+   "properties": {
+    "site": "Pointe-Indienne",
+    "station": "G2",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 12,
+    "depassements": "PM10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.814222,
+     -4.672556
+    ]
+   },
+   "properties": {
+    "site": "Pointe-Indienne",
+    "station": "PA",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 6,
+    "depassements": "PM10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.818139,
+     -4.656083
+    ]
+   },
+   "properties": {
+    "site": "Pointe-Indienne",
+    "station": "PB",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 6,
+    "depassements": "PM10"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.814167,
+     -4.669389
+    ]
+   },
+   "properties": {
+    "site": "Pointe-Indienne (production)",
+    "station": "Station A",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 9,
+    "depassements": "NO2"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.813944,
+     -4.673583
+    ]
+   },
+   "properties": {
+    "site": "Pointe-Indienne (production)",
+    "station": "Station B",
+    "departement": "Kouilou",
+    "secteur": "Pétrole et gaz (amont)",
+    "nb_mesures": 9,
+    "depassements": "NO2"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.851056,
+     -4.733167
+    ]
+   },
+   "properties": {
+    "site": "Raffinerie de Pointe-Noire",
+    "station": "A",
+    "departement": "Pointe-Noire",
+    "secteur": "Pétrole aval (raffinage, dépôts)",
+    "nb_mesures": 7,
+    "depassements": "Benzène, Cadmium (Cd), Nickel (Ni), Plomb (Pb)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.850014,
+     -4.731694
+    ]
+   },
+   "properties": {
+    "site": "Raffinerie de Pointe-Noire",
+    "station": "B",
+    "departement": "Pointe-Noire",
+    "secteur": "Pétrole aval (raffinage, dépôts)",
+    "nb_mesures": 7,
+    "depassements": "Benzène, Cadmium (Cd), Nickel (Ni), Plomb (Pb)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.852389,
+     -4.733222
+    ]
+   },
+   "properties": {
+    "site": "Raffinerie de Pointe-Noire",
+    "station": "C",
+    "departement": "Pointe-Noire",
+    "secteur": "Pétrole aval (raffinage, dépôts)",
+    "nb_mesures": 7,
+    "depassements": "Benzène, Cadmium (Cd), Nickel (Ni), Plomb (Pb)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.849778,
+     -4.734306
+    ]
+   },
+   "properties": {
+    "site": "Raffinerie de Pointe-Noire",
+    "station": "G1",
+    "departement": "Pointe-Noire",
+    "secteur": "Pétrole aval (raffinage, dépôts)",
+    "nb_mesures": 7,
+    "depassements": "Benzène, Cadmium (Cd), Nickel (Ni), Plomb (Pb)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.849694,
+     -4.733306
+    ]
+   },
+   "properties": {
+    "site": "Raffinerie de Pointe-Noire",
+    "station": "G2",
+    "departement": "Pointe-Noire",
+    "secteur": "Pétrole aval (raffinage, dépôts)",
+    "nb_mesures": 7,
+    "depassements": "Benzène, Cadmium (Cd), Nickel (Ni), Plomb (Pb)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.8505,
+     -4.733167
+    ]
+   },
+   "properties": {
+    "site": "Raffinerie de Pointe-Noire",
+    "station": "G3",
+    "departement": "Pointe-Noire",
+    "secteur": "Pétrole aval (raffinage, dépôts)",
+    "nb_mesures": 7,
+    "depassements": "Benzène, Cadmium (Cd), Nickel (Ni), Plomb (Pb)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.849611,
+     -4.732361
+    ]
+   },
+   "properties": {
+    "site": "Raffinerie de Pointe-Noire",
+    "station": "G4",
+    "departement": "Pointe-Noire",
+    "secteur": "Pétrole aval (raffinage, dépôts)",
+    "nb_mesures": 7,
+    "depassements": "Benzène, Cadmium (Cd), Nickel (Ni), Plomb (Pb)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.848583,
+     -4.732889
+    ]
+   },
+   "properties": {
+    "site": "Raffinerie de Pointe-Noire",
+    "station": "G5",
+    "departement": "Pointe-Noire",
+    "secteur": "Pétrole aval (raffinage, dépôts)",
+    "nb_mesures": 7,
+    "depassements": "Benzène, Cadmium (Cd), Nickel (Ni), Plomb (Pb)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.852389,
+     -4.733222
+    ]
+   },
+   "properties": {
+    "site": "Raffinerie de Pointe-Noire",
+    "station": "G6",
+    "departement": "Pointe-Noire",
+    "secteur": "Pétrole aval (raffinage, dépôts)",
+    "nb_mesures": 7,
+    "depassements": "Benzène, Cadmium (Cd), Nickel (Ni), Plomb (Pb)"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.616222,
+     -4.166611
+    ]
+   },
+   "properties": {
+    "site": "Site FORSPAK (Niari)",
+    "station": "P1",
+    "departement": "Niari",
+    "secteur": "Cimenterie",
+    "nb_mesures": 2,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.612833,
+     -4.153917
+    ]
+   },
+   "properties": {
+    "site": "Site FORSPAK (Niari)",
+    "station": "P2",
+    "departement": "Niari",
+    "secteur": "Cimenterie",
+    "nb_mesures": 2,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     12.608056,
+     -4.157583
+    ]
+   },
+   "properties": {
+    "site": "Site FORSPAK (Niari)",
+    "station": "P3",
+    "departement": "Niari",
+    "secteur": "Cimenterie",
+    "nb_mesures": 2,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.861708,
+     -4.769547
+    ]
+   },
+   "properties": {
+    "site": "Site de Songolo",
+    "station": "G1",
+    "departement": "Pointe-Noire",
+    "secteur": "Agroalimentaire",
+    "nb_mesures": 4,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.8615,
+     -4.769364
+    ]
+   },
+   "properties": {
+    "site": "Site de Songolo",
+    "station": "G2",
+    "departement": "Pointe-Noire",
+    "secteur": "Agroalimentaire",
+    "nb_mesures": 1,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.755444,
+     -4.543611
+    ]
+   },
+   "properties": {
+    "site": "Tchissanga",
+    "station": "G1",
+    "departement": "Kouilou",
+    "secteur": "Traitement des déchets",
+    "nb_mesures": 6,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.757139,
+     -4.544167
+    ]
+   },
+   "properties": {
+    "site": "Tchissanga",
+    "station": "G2",
+    "departement": "Kouilou",
+    "secteur": "Traitement des déchets",
+    "nb_mesures": 6,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.782111,
+     -4.532167
+    ]
+   },
+   "properties": {
+    "site": "Tchissanga / Holle Moni",
+    "station": "Holle Moni",
+    "departement": "Kouilou",
+    "secteur": "Traitement des déchets",
+    "nb_mesures": 6,
+    "depassements": "aucun"
+   }
+  },
+  {
+   "type": "Feature",
+   "geometry": {
+    "type": "Point",
+    "coordinates": [
+     11.789611,
+     -4.541639
+    ]
+   },
+   "properties": {
+    "site": "Tchissanga / Holle Moni",
+    "station": "Tchissanga",
+    "departement": "Kouilou",
+    "secteur": "Traitement des déchets",
+    "nb_mesures": 6,
+    "depassements": "aucun"
+   }
+  }
+ ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "qualite-air-dge-oms",
+  "version": "1.0.0",
+  "description": "Application web de la base consolidée qualité de l'air DGE / OMS Congo",
+  "scripts": {
+    "build": "node scripts/vendor.mjs && node scripts/build-data.mjs",
+    "data": "node scripts/build-data.mjs",
+    "report": "python3 scripts/build_report.py",
+    "start": "npx --yes serve public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/junelstone/air-consolidation.git"
+  },
+  "author": "DGE / OMS Congo",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "chart.js": "^4.4.1",
+    "exceljs": "^4.4.0",
+    "leaflet": "^1.9.4"
+  },
+  "private": true,
+  "type": "module"
+}

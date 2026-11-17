@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Qualité de l'air – DGE / OMS Congo</title>
+  <meta name="description" content="Base consolidée des mesures de qualité de l'air collectées par la DGE avec l'OMS Congo : tableau de bord, carte des stations, données et rapport de synthèse.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230b6e4f'/%3E%3Cpath d='M7 18c4-6 8 2 12-4s5 0 6 1' stroke='white' stroke-width='2.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <h1>Qualité de l'air en République du Congo</h1>
+        <p class="sub">Base consolidée DGE / OMS Congo · atelier du 17 au 19 novembre 2026 · <span id="version"></span></p>
+      </div>
+    </div>
+    <a class="btn primary" href="rapport/Rapport_synthese_qualite_air_DGE_OMS.pdf" download>Télécharger le rapport PDF</a>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="dashboard" aria-selected="true">Tableau de bord</button>
+    <button role="tab" data-tab="carte">Carte des stations</button>
+    <button role="tab" data-tab="donnees">Données</button>
+    <button role="tab" data-tab="emissions">Émissions</button>
+    <button role="tab" data-tab="anomalies">Anomalies</button>
+    <button role="tab" data-tab="rapport">Rapport et graphiques</button>
+    <button role="tab" data-tab="methode">Méthode</button>
+  </nav>
+
+  <section class="filters" id="filters" aria-label="Filtres">
+    <label>Polluant<select id="f-polluant"></select></label>
+    <label>Secteur<select id="f-secteur"></select></label>
+    <label>Département<select id="f-departement"></select></label>
+    <label>Site<select id="f-site"></select></label>
+    <label>Qualité<select id="f-qualite">
+      <option value="valides">Mesures valides uniquement</option>
+      <option value="horsdoublons">Toutes sauf doublons</option>
+      <option value="toutes">Toutes les mesures</option>
+    </select></label>
+    <button class="btn" id="f-reset" type="button">Réinitialiser</button>
+  </section>
+
+  <main>
+    <!-- TABLEAU DE BORD -->
+    <section class="panel active" id="tab-dashboard">
+      <div class="kpis" id="kpis"></div>
+      <div class="grid">
+        <article class="card wide">
+          <header><h2>Taux de dépassement des valeurs guides OMS par polluant</h2>
+          <p class="hint">Part des mesures comparables qui dépassent la valeur guide. Cliquez sur une barre pour filtrer sur ce polluant.</p></header>
+          <div class="chart tall"><canvas id="c-depassements"></canvas></div>
+        </article>
+        <article class="card wide">
+          <header><h2 id="t-sites">Concentrations par site comparées à la valeur guide</h2>
+          <p class="hint" id="h-sites">Choisissez un polluant dans les filtres.</p></header>
+          <div class="chart tall"><canvas id="c-sites"></canvas></div>
+        </article>
+        <article class="card">
+          <header><h2>Statut de conformité</h2></header>
+          <div class="chart"><canvas id="c-statuts"></canvas></div>
+        </article>
+        <article class="card">
+          <header><h2>Dépassements par département</h2></header>
+          <div class="chart"><canvas id="c-departements"></canvas></div>
+        </article>
+        <article class="card wide">
+          <header><h2>Dépassements par secteur d'activité</h2></header>
+          <div class="chart"><canvas id="c-secteurs"></canvas></div>
+        </article>
+        <article class="card wide">
+          <header><h2>Synthèse par polluant (sélection en cours)</h2></header>
+          <div class="table-wrap"><table class="data" id="t-synthese"></table></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- CARTE -->
+    <section class="panel" id="tab-carte">
+      <div class="card">
+        <header class="row">
+          <div><h2>Stations de mesure géoréférencées</h2>
+          <p class="hint">Rouge : au moins un dépassement de valeur guide (pour le polluant choisi, le cas échéant). Vert : aucun dépassement. Cliquez sur un point pour le détail.</p></div>
+          <div class="actions">
+            <a class="btn" href="data/stations_qualite_air.kml" download>KML (Google Earth)</a>
+            <a class="btn" href="data/stations_qualite_air.geojson" download>GeoJSON (QGIS)</a>
+          </div>
+        </header>
+        <div id="map"></div>
+        <p class="hint" id="map-note"></p>
+      </div>
+    </section>
+
+    <!-- DONNÉES -->
+    <section class="panel" id="tab-donnees">
+      <div class="card">
+        <header class="row">
+          <div><h2>Mesures</h2><p class="hint" id="table-count"></p></div>
+          <div class="actions">
+            <input type="search" id="q" placeholder="Rechercher (entreprise, station, polluant…)">
+            <button class="btn" id="exp-csv" type="button">Exporter CSV</button>
+            <button class="btn" id="exp-xlsx" type="button">Exporter Excel</button>
+            <a class="btn" href="data/Base_consolidee_qualite_air_DGE_OMS.xlsx" download>Base complète (.xlsx)</a>
+          </div>
+        </header>
+        <div class="table-wrap"><table class="data" id="t-mesures"></table></div>
+        <div class="pager" id="pager"></div>
+      </div>
+    </section>
+
+    <!-- ÉMISSIONS -->
+    <section class="panel" id="tab-emissions">
+      <div class="grid">
+        <article class="card wide">
+          <header class="row"><div><h2>Inventaires d'émissions TotalEnergies (t/an)</h2>
+            <p class="hint">Émissions annuelles déclarées : ce ne sont pas des concentrations, elles ne se comparent pas aux valeurs guides OMS.</p></div>
+            <div class="actions"><label>Polluant <select id="e-polluant"></select></label></div>
+          </header>
+          <div class="chart tall"><canvas id="c-emissions"></canvas></div>
+        </article>
+        <article class="card wide">
+          <header class="row"><div><h2>Rejets à la cheminée – Dangote Cement (mg/Nm³)</h2>
+            <p class="hint">Comparés aux valeurs limites d'émission SFI/IFC pour les cimenteries (2007).</p></div>
+            <div class="actions"><label>Polluant <select id="d-polluant"></select></label></div>
+          </header>
+          <div class="chart"><canvas id="c-cheminee"></canvas></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ANOMALIES -->
+    <section class="panel" id="tab-anomalies">
+      <div class="card">
+        <header class="row"><div><h2>Journal des anomalies et corrections</h2>
+          <p class="hint">Problèmes détectés dans les fiches de collecte et traitements appliqués.</p></div>
+          <div class="actions"><select id="a-type"></select></div>
+        </header>
+        <div class="table-wrap"><table class="data" id="t-anomalies"></table></div>
+      </div>
+      <div class="card">
+        <header class="row"><div><h2>Mesures à vérifier sur le rapport source</h2>
+          <p class="hint" id="verif-count"></p></div>
+          <div class="actions"><button class="btn" id="exp-verif" type="button">Exporter la liste (Excel)</button></div>
+        </header>
+        <div class="table-wrap"><table class="data" id="t-verif"></table></div>
+      </div>
+    </section>
+
+    <!-- RAPPORT -->
+    <section class="panel" id="tab-rapport">
+      <div class="card report-cta">
+        <div>
+          <h2>Rapport de synthèse</h2>
+          <p>Plan du rapport technique, premiers constats, limites, recommandations et questions à trancher en atelier, avec les 13 graphiques placés dans les chapitres correspondants.</p>
+        </div>
+        <a class="btn primary" href="rapport/Rapport_synthese_qualite_air_DGE_OMS.pdf" download>Télécharger le PDF</a>
+        <a class="btn" href="rapport/Rapport_synthese_qualite_air_DGE_OMS.pdf" target="_blank" rel="noopener">Ouvrir dans le navigateur</a>
+      </div>
+      <div class="gallery" id="gallery"></div>
+    </section>
+
+    <!-- MÉTHODE -->
+    <section class="panel" id="tab-methode">
+      <div class="grid">
+        <article class="card wide prose">
+          <h2>Règles de traitement</h2>
+          <ul>
+            <li><b>Harmonisation des unités</b> : toutes les concentrations sont converties en µg/m³ (mg/m³ × 1000 ; ppm × M/24,45 × 1000 à 25 °C et 1 atm). La valeur et l'unité d'origine sont conservées.</li>
+            <li><b>Valeurs « &lt; LQ »</b> : conservées avec la limite de quantification. Si la LQ est inférieure à la valeur guide, la mesure est conforme ; sinon elle est « non concluante ».</li>
+            <li><b>Doublons</b> exclus des statistiques : LGN 2 (= LGN 1), Luyane Mpili (= Luyan Surveillance), Feuil40 (= Saris Raffinerie), Good Luck Mining (= GPL Louvakou, doublon suspect). Les fiches ENI Mboundi J1–J5 sont des jours distincts et sont conservées.</li>
+            <li><b>Données à vérifier</b> : valeurs physiquement improbables, unités incohérentes ou copies suspectes. Elles sont conservées mais exclues des comparaisons tant que le rapport source n'a pas été revu.</li>
+            <li><b>Comparaison aux normes</b> : valeur guide de court terme (24 h, 8 h ou hebdomadaire) quand elle existe, sinon valeur annuelle. La plupart des prélèvements durent 1 à 14 jours : la comparaison est indicative.</li>
+            <li><b>Air intérieur et air de site</b> (plateformes offshore, dépôts SCLOG, usine Dangote) : comparés aux valeurs guides d'air ambiant à titre indicatif uniquement.</li>
+            <li><b>Normes nationales</b> : aucun texte congolais fixant des valeurs limites d'air ambiant n'a été identifié. À confirmer par la DGE.</li>
+          </ul>
+          <h2>Mise à jour des données</h2>
+          <p>Le site est généré à partir du fichier Excel <code>data/Base_consolidee_qualite_air_DGE_OMS.xlsx</code> du dépôt. Pour corriger des valeurs ou ajouter des mesures, remplacez ce fichier (mêmes onglets et en-têtes) : Netlify reconstruit le site automatiquement.</p>
+        </article>
+        <article class="card wide">
+          <header><h2>Valeurs de référence utilisées</h2></header>
+          <div class="table-wrap"><table class="data" id="t-guides"></table></div>
+        </article>
+        <article class="card wide">
+          <header><h2>Fiches de collecte</h2></header>
+          <div class="table-wrap"><table class="data" id="t-fiches"></table></div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    Direction Générale de l'Environnement (DGE) · OMS Congo · Données indicatives, à valider en atelier.
+    <span id="gen"></span>
+  </footer>
+
+  <div id="loading" class="loading">Chargement des données…</div>
+
+  <script src="vendor/chart.umd.js"></script>
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

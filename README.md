@@ -14,7 +14,8 @@ collectées par la Direction Générale de l'Environnement avec l'OMS Congo
   téléchargement KML (Google Earth) et GeoJSON (QGIS).
 - **Données** : tableau des 2 516 mesures, recherche, tri, export CSV et Excel de la sélection.
 - **Entreprises et émissions** : fiche par entreprise (mesures, dépassements, mesures à vérifier), inventaires
-  TotalEnergies (t/an) et rejets cheminée Dangote vs limites SFI/IFC ; bouton « Imprimer la fiche ».
+  TotalEnergies (t/an, avec un total en CO2 équivalent : CO2 + 28 × CH4 + 265 × N2O, PRG GIEC AR5, HFC exclus)
+  et rejets cheminée Dangote vs limites SFI/IFC ; bouton « Imprimer la fiche ».
 - **Anomalies** : journal des corrections et liste des 232 mesures à vérifier, classées en 5 catégories ;
   export Excel de travail (un onglet par catégorie, colonnes Décision / valeur corrigée / vérifié par à remplir).
 - **Rapport et graphiques** : rapport de synthèse PDF et les 13 figures (version figée du 17/11/2026).

@@ -175,6 +175,7 @@ function showTab(tab) {
 
 /* ---------- graphiques ---------- */
 function chartDefaults() {
+  Chart.defaults.locale = "fr-FR";
   Chart.defaults.color = css("--muted");
   Chart.defaults.borderColor = css("--border");
   Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
@@ -570,6 +571,22 @@ const stamp = () => new Date().toISOString().slice(0, 10);
 /* ---------- émissions (par entreprise) ---------- */
 const PAL = ["#0b6e4f", "#c0392b", "#2f6db3", "#c27c0e", "#7b4fa0", "#1f9aa8", "#8a6d3b", "#d35d8f", "#5b6b64", "#3e8e2f"];
 const emState = { entreprise: null, site: ALL, polluant: null };
+// CO2 équivalent : pouvoirs de réchauffement global à 100 ans du 5e rapport du GIEC (AR5),
+// ceux des inventaires nationaux sous l'Accord de Paris (décision 18/CMA.1). HFC exclus : gaz non précisé.
+const CO2E = "CO2 équivalent (CO2 + CH4 + N2O)";
+const PRG = { CO2: 1, CH4: 28, N2O: 265 };
+function withCO2e(inv) {
+  const g = new Map();
+  for (const e of inv) {
+    if (!(e.Polluant in PRG)) continue;
+    const k = e.Site + "|" + e["Année"];
+    if (!g.has(k)) g.set(k, { ...e, Polluant: CO2E, Polluant_source: "calcul", "Émission_t_an": 0, "Émission_kt_an": null, parts: {}, hasCO2: false });
+    const o = g.get(k), t = e["Émission_t_an"] * PRG[e.Polluant];
+    o["Émission_t_an"] += t; o.parts[e.Polluant] = t; if (e.Polluant === "CO2") o.hasCO2 = true;
+  }
+  const extra = [...g.values()].filter((o) => o.hasCO2).map((o) => ({ ...o, "Émission_t_an": Math.round(o["Émission_t_an"] * 100) / 100 }));
+  return [...inv, ...extra];
+}
 
 function companies() {
   const inv = new Set(DATA.emissions.map((e) => e.Entreprise));
@@ -596,7 +613,7 @@ function initEmissions() {
 
 function renderEmissions() {
   const ent = emState.entreprise;
-  const inv = DATA.emissions.filter((e) => e.Entreprise === ent && typeof e["Émission_t_an"] === "number");
+  const inv = withCO2e(DATA.emissions.filter((e) => e.Entreprise === ent && typeof e["Émission_t_an"] === "number"));
   const ch = DATA.cheminee.filter((e) => e.Entreprise === ent);
   const mes = rowsAll().filter((m) => m.Entreprise === ent && m["Statut_qualité"] !== "Doublon (exclu)");
 
@@ -609,7 +626,8 @@ function renderEmissions() {
 
   // polluants émis
   const src = invS.length ? invS : chS;
-  const pols = uniq(src.map((e) => e.Polluant));
+  const pols = uniq(src.map((e) => e.Polluant).filter((p) => p !== CO2E));
+  if (src.some((e) => e.Polluant === CO2E)) pols.unshift(CO2E);
   const psel = $("#e-polluant");
   psel.disabled = !pols.length;
   if (!pols.includes(emState.polluant)) emState.polluant = pols.find((p) => /^COV/.test(p)) || pols.find((p) => p === "NOx") || pols[0] || null;
@@ -633,20 +651,38 @@ function renderEmissions() {
   const wrap = $("#e-chart-wrap"), empty = $("#e-empty");
   if (charts["c-emissions"]) { charts["c-emissions"].destroy(); delete charts["c-emissions"]; }
   if (invS.length) {
-    $("#e-title").textContent = `Émissions annuelles déclarées – ${ent} (t/an)`;
-    $("#e-hint").textContent = "Inventaires d'émissions issus du reporting de l'entreprise : ce ne sont pas des concentrations, elles ne se comparent pas aux valeurs guides OMS.";
+    const isEq = emState.polluant === CO2E;
+    $("#e-title").textContent = isEq ? `Gaz à effet de serre – ${ent} (t CO2e/an)` : `Émissions annuelles déclarées – ${ent} (t/an)`;
     const rows = invS.filter((e) => e.Polluant === emState.polluant);
     const years = uniq(rows.map((r) => r["Année"])).sort((a, b) => a - b);
     const ss = uniq(rows.map((r) => r.Site));
+    const noN2O = isEq ? ss.filter((s) => !rows.some((r) => r.Site === s && "N2O" in r.parts)) : [];
+    $("#e-hint").textContent = isEq
+      ? "Gaz à effet de serre exprimés en tonnes de CO2 équivalent par an : CO2 × 1 + CH4 × 28 + N2O × 265 (pouvoirs de réchauffement à 100 ans, GIEC AR5, utilisés pour les inventaires nationaux de l'Accord de Paris). " +
+        "Les HFC ne sont pas inclus (gaz non précisé dans le reporting). Indicateur climatique, sans valeur limite par site." +
+        (noN2O.length ? ` N2O non déclaré pour : ${noN2O.join(", ")}.` : "")
+      : "Inventaires d'émissions issus du reporting de l'entreprise : ce ne sont pas des concentrations, elles ne se comparent pas aux valeurs guides OMS.";
+    const unit = isEq ? "t CO2e" : "t";
+    const datasets = ss.map((s, i) => ({
+      label: s, data: years.map((y) => rows.find((r) => r.Site === s && r["Année"] === y)?.["Émission_t_an"] ?? null),
+      borderColor: PAL[i % PAL.length], backgroundColor: PAL[i % PAL.length], tension: 0, spanGaps: true, pointRadius: 3,
+    }));
+    if (isEq && ss.length > 1) {
+      datasets.push({ label: "Total de l'entreprise", data: years.map((y) => rows.filter((r) => r["Année"] === y).reduce((a, r) => a + r["Émission_t_an"], 0)),
+        borderColor: css("--text"), backgroundColor: css("--text"), borderDash: [6, 4], tension: 0, pointRadius: 3 });
+    }
     wrap.hidden = false; empty.hidden = true;
     makeChart("c-emissions", {
       type: "line",
-      data: { labels: years, datasets: ss.map((s, i) => ({
-        label: s, data: years.map((y) => rows.find((r) => r.Site === s && r["Année"] === y)?.["Émission_t_an"] ?? null),
-        borderColor: PAL[i % PAL.length], backgroundColor: PAL[i % PAL.length], tension: 0, spanGaps: true, pointRadius: 3,
-      })) },
-      options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: `${emState.polluant} (t/an)` } } },
-        plugins: { tooltip: { callbacks: { label: (c) => `${c.dataset.label} : ${fmt(c.raw)} t` } } } },
+      data: { labels: years, datasets },
+      options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, title: { display: true, text: isEq ? "t CO2e/an" : `${emState.polluant} (t/an)` } } },
+        plugins: { tooltip: { callbacks: {
+          label: (c) => `${c.dataset.label} : ${fmt(c.raw)} ${unit}`,
+          afterLabel: (c) => {
+            if (!isEq) return "";
+            const r = rows.find((x) => x.Site === c.dataset.label && x["Année"] === years[c.dataIndex]);
+            return r ? Object.entries(r.parts).map(([g, v]) => `${g} : ${fmt(Math.round(v))} t CO2e`) : "";
+          } } } } },
     });
   } else if (chS.length) {
     $("#e-title").textContent = `Rejets à la cheminée – ${ent} (mg/Nm³)`;
